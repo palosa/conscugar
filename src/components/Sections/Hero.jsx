@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { BackgroundOrbs } from '../Effects/BackgroundOrbs';
+import BackgroundOrbs from '../ui/BackgroundOrbs';
 import Calculator from '../Calculator/Calculator';
 import heroImg from '../../assets/hero.png';
 
