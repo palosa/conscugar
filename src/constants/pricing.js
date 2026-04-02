@@ -70,16 +70,23 @@ export const calculateBudget = (data, config = {}) => {
   // 4. Aplicar Márgenes de Error (desde ajustes globales)
   const marginSetting = globalSettings.find(s => s.key === 'price_margin');
   const margin = marginSetting ? Number(marginSetting.value) : 0.15; // ±15% defecto
+
+  // Mano de Obra (Configurada por Admin)
+  const laborSetting = globalSettings.find(s => s.key === 'labor_cost_m2');
+  const laborCostM2 = laborSetting ? Number(laborSetting.value) : 150; // 150€/m2 por defecto
+  const laborTotal = laborCostM2 * m2 * qSetting.multiplier;
   
-  const total = baseTotal + extrasTotal;
+  const subtotal = Math.round(baseTotal + extrasTotal + laborTotal);
+  const iva = Math.round(subtotal * 0.21);
+  const totalWithIVA = subtotal + iva;
   
   return {
-    min: Math.round(total * (1 - margin)),
-    max: Math.round(total * (1 + margin)),
-    total: Math.round(total),
+    min: Math.round(totalWithIVA * (1 - margin)),
+    max: Math.round(totalWithIVA * (1 + margin)),
+    total: totalWithIVA,
     breakdown: {
-      base: Math.round(baseTotal),
-      extras: Math.round(extrasTotal),
+      base: subtotal,
+      iva: iva,
       pricePerM2: Math.round(pricePerM2),
       marginPercent: Math.round(margin * 100)
     }

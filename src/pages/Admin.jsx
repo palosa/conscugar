@@ -545,13 +545,14 @@ const Admin = () => {
                     <div className="space-y-8">
                        <h3 className="text-xs font-black uppercase text-primary tracking-widest border-l-2 border-primary pl-4">Configuración del Motor</h3>
                        <div className="space-y-6">
+                          <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-4">Parámetros Globales (Solo Administrador)</p>
                           {globalSettings.map(s => (
-                             <div key={s.key} className="space-y-2">
-                                <label className="text-[9px] font-black uppercase text-white/30">{s.description}</label>
+                             <div key={s.key} className="space-y-2 group">
+                                <label className="text-[9px] font-black uppercase text-white/30 group-hover:text-primary transition-colors">{s.description || s.key}</label>
                                 <input 
                                   type="text" value={s.value}
                                   onChange={(e)=>handleUpdate('global_settings', s.key, 'value', e.target.value)}
-                                  className="w-full bg-dark/50 border border-white/10 p-4 text-sm font-bold text-white outline-none focus:border-primary/20"
+                                  className="w-full bg-dark/50 border border-white/10 p-4 text-sm font-bold text-white outline-none focus:border-primary/20 hover:border-white/20 transition-all"
                                 />
                              </div>
                           ))}

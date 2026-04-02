@@ -41,6 +41,7 @@ const Calculator = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [visitRequested, setVisitRequested] = useState(false);
   const containerRef = useRef(null);
   
   const [config, setConfig] = useState({
@@ -491,18 +492,18 @@ const Calculator = () => {
 
                <div className="bg-black/60 p-12 text-center border border-white/[0.1] relative group shadow-2xl">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-primary group-hover:w-64 transition-all duration-1000" />
-                  <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Estimación Material · S.E.U.O.</p>
+                  <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Presupuesto Final · IVA INCLUIDO</p>
                   <h2 className="text-7xl sm:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.2)]">{budget.total.toLocaleString()}€</h2>
                   <div className="flex justify-center gap-12 mt-8 py-6 border-t border-white/10">
-                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">P. Material: <span className="text-white ml-2">{budget.breakdown.base.toLocaleString()}€</span></div>
-                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{Math.round(budget.total*0.21).toLocaleString()}€</span></div>
+                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">Base (Obra + Extras): <span className="text-white ml-2">{budget.breakdown.base.toLocaleString()}€</span></div>
+                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{budget.breakdown.iva.toLocaleString()}€</span></div>
                   </div>
                </div>
 
                {/* Desglose de Extras si existen */}
                {data.selectedExtras.length > 0 && (
                  <div className="space-y-3">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Servicios Adicionales:</p>
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Servicios Adicionales Incluidos:</p>
                     <div className="flex flex-wrap gap-2">
                        {config.extras.filter(e => data.selectedExtras.includes(e.id)).map(extra => (
                          <span key={extra.id} className="bg-white/5 border border-white/5 px-3 py-1.5 text-[9px] font-bold uppercase text-white/70 italic">
@@ -513,11 +514,27 @@ const Calculator = () => {
                  </div>
                )}
                
-               <div className="flex flex-col sm:flex-row gap-3">
-                  <Button className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] shadow-xl shadow-primary/20" onClick={() => window.open(`https://wa.me/34689025178?text=Hola!%20He%20generado%20el%20presupuesto%20de%20mi%20obra.`)}>SOLICITAR VISITA TÉCNICA</Button>
-                  <Button variant="outline" className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] border-white/20 text-white hover:border-primary hover:text-primary transition-all bg-white/[0.02]" onClick={generatePDF}>
-                     <Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR PRESUPUESTO PDF
-                  </Button>
+               <div className="min-h-[120px] flex items-center justify-center">
+                  {!visitRequested ? (
+                    <div className="w-full flex flex-col sm:flex-row gap-3 animate-in fade-in duration-500">
+                       <Button 
+                         className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] shadow-xl shadow-primary/20" 
+                         onClick={() => setVisitRequested(true)}
+                       >
+                         SOLICITAR VISITA TÉCNICA GRATUITA
+                       </Button>
+                       <Button variant="outline" className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] border-white/20 text-white hover:border-primary hover:text-primary transition-all bg-white/[0.02]" onClick={generatePDF}>
+                          <Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR PRESUPUESTO PDF
+                       </Button>
+                    </div>
+                  ) : (
+                    <div className="w-full p-8 bg-primary/10 border border-primary/20 text-center space-y-3 animate-in zoom-in-95 duration-500">
+                       <p className="text-primary font-black uppercase tracking-[0.3em] text-xs">¡Solicitud Recibida!</p>
+                       <p className="text-white/80 text-sm font-medium leading-relaxed">
+                          Un técnico de Conscugar se pondrá en contacto contigo en los <br/> próximos días para concertar una visita y validar el presupuesto.
+                       </p>
+                    </div>
+                  )}
                </div>
             </div>
           )}
