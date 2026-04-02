@@ -390,7 +390,7 @@ const Calculator = () => {
           )}
 
           {step === 3 && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                <div className="grid grid-cols-1 gap-3">
                   {[...config.qualitySettings].sort((a, b) => a.multiplier - b.multiplier).map(q => {
                     const isActive = data.calidad === q.id;
@@ -473,7 +473,7 @@ const Calculator = () => {
           )}
 
           {step === 6 && (
-            <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-700">
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out">
                {/* Resumen de Configuración */}
                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-8 border-b border-white/10">
                   <div className="space-y-1 text-center sm:text-left">

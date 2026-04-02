@@ -35,8 +35,9 @@ export const Hero = () => {
         {/* 🔥 TÍTULO - Ajustado para evitar solapamiento */}
         <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left pt-10 lg:pt-0">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="space-y-6"
           >
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.3em]">
