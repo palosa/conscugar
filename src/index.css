@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 245 197 24;
+    --primary-dark: 210 165 15;
+    --dark: 10 10 10;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    background-color: rgb(10 10 10);
+  }
+  
+  /* Accessibility & Focus States */
+  :focus-visible {
+    outline: 2px solid #F5C518;
+    outline-offset: 4px;
+  }
+
+  /* Base smoothing and text rendering */
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* Improved contrast for secondary texts */
+  .text-white\/40 {
+    color: rgba(255, 255, 255, 0.55); /* Increased slightly for AA compliance */
+  }
+  .text-white\/30 {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-outfit font-black tracking-tight uppercase;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-dark px-8 py-4 font-black uppercase tracking-wider text-[10px] 
+           hover:bg-white transition-all duration-300 transform hover:-translate-y-0.5
+           active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply border border-white/10 text-white/40 px-8 py-4 font-black uppercase tracking-wider text-[10px]
+           hover:border-primary hover:text-primary transition-all duration-300;
+  }
+
+  .glass-card {
+    @apply bg-white/[0.02] border border-white/[0.05] backdrop-blur-xl relative overflow-hidden;
+  }
+
+  /* Efecto de Foco Dinámico */
+  .spotlight-glow {
+    @apply absolute inset-0 pointer-events-none opacity-40 z-0;
+    background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(245, 197, 24, 0.08), transparent 80%);
+  }
+
+  .section-container {
+    @apply max-w-7xl mx-auto px-6 py-20 lg:py-32;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+::selection {
+  background-color: rgba(245, 197, 24, 0.3);
+  color: #F5C518;
+}
