@@ -1,19 +1,23 @@
-import React from 'react';
-import Calculator from '../Calculator/Calculator';
+import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import { BackgroundOrbs } from '../Effects/BackgroundOrbs';
+import Calculator from '../Calculator/Calculator';
 import heroImg from '../../assets/hero.png';
 
-const Hero = () => {
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 100]);
+export const Hero = () => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  });
+
+  const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
 
   return (
-    <section className="relative min-h-screen py-32 overflow-hidden flex flex-col justify-center">
-      {/* Background with IA-generated feel */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-dark/60 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-dark via-transparent to-dark z-10" />
+    <section ref={ref} className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden bg-dark">
+      {/* Elementos Visuales de Fondo */}
+      <div className="absolute inset-0 z-0">
+        <BackgroundOrbs />
         <motion.div 
           style={{ 
             backgroundImage: `url(${heroImg})`, 
@@ -23,68 +27,47 @@ const Hero = () => {
           }}
           className="w-full h-[120%] absolute -top-[10%] left-0 pointer-events-none opacity-40 mix-blend-overlay"
         />
-        <div className="absolute top-1/2 left-0 w-full h-[500px] bg-primary/5 blur-[120px] -translate-y-1/2 -z-10" />
+        <div className="absolute top-1/2 left-0 w-full h-[500px] bg-primary/5 blur-[120px] -translate-y-1/2" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-20 grid grid-cols-1 lg:grid-cols-2 gap-24 lg:gap-32 items-center">
-        {/* Text Content */}
-        <div className="space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
+      <div className="max-w-7xl mx-auto px-6 relative z-20 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-center">
+        
+        {/* Title Content - En móvil aparece PRIMERO */}
+        <div className="order-1 lg:order-1 space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto text-center lg:text-left"
+            className="space-y-6"
           >
-            <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black tracking-tighter uppercase italic leading-[0.85] mb-8">
-              <span className="block text-white">Construcción</span>
-              <span className="block text-primary">Nivel Estudio</span>
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.3em]">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> Sagunto · Puerto · Alrededores
+            </div>
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter uppercase italic leading-[0.95] sm:leading-[0.85]">
+              Construcciones <br />
+              <span className="text-white">Y</span>
+              <span className="text-primary"> Reformas</span><br />
+              <span className="text-white/20">en</span>
+              <span className="text-primary"> Sagunto</span>
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-white/70 font-bold uppercase tracking-[0.3em] max-w-2xl mx-auto lg:mx-0 mb-12">
-              Transformamos espacios con precisión arquitectónica y acabados de lujo en Sagunto.
+            <p className="max-w-xl text-xs sm:text-base lg:text-lg text-white/70 font-bold uppercase tracking-[0.3em] leading-relaxed">
+               Transformamos viviendas comunes en espacios magistrales. Arquitectura de vanguardia y ejecución técnica en Sagunto.
             </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="flex flex-wrap justify-center lg:justify-start gap-6 pt-4"
-          >
-            <div className="flex items-center gap-2 group">
-              <div className="w-10 h-10 border border-white/10 flex items-center justify-center bg-white/5 transition-colors group-hover:border-primary/50">
-                <Clock className="w-5 h-5 text-primary" />
-              </div>
-              <div className="space-y-0.5 text-left">
-                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Experiencia</h4>
-                <p className="text-xs font-bold text-white/80 uppercase tracking-widest">+15 años en Sagunto</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 group">
-              <div className="w-10 h-10 border border-white/10 flex items-center justify-center bg-white/5 transition-colors group-hover:border-primary/50">
-                <CheckCircle className="w-5 h-5 text-primary" />
-              </div>
-              <div className="space-y-0.5 text-left">
-                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Ejecutados</h4>
-                <p className="text-xs font-bold text-white/80 uppercase tracking-widest">+200 Proyectos</p>
-              </div>
-            </div>
           </motion.div>
         </div>
 
-        {/* The Protagonist: Calculator */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="w-full"
-          id="calculadora"
-        >
-          <div className="relative">
-            {/* Design accents */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 border-t border-r border-primary/20 hidden lg:block" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 border-b border-l border-primary/20 hidden lg:block" />
-            <Calculator />
-          </div>
-        </motion.div>
+        {/* Calculator - En móvil aparece SEGUNDO */}
+        <div className="order-2 lg:order-2 relative w-full flex justify-center lg:justify-end">
+           <div className="w-full max-w-xl">
+              <div id="calculadora" className="relative group">
+                 {/* Efecto de brillo detrás de la calculadora */}
+                 <div className="absolute -inset-4 bg-primary/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                 <div className="relative bg-black/40 backdrop-blur-xl border border-white/5 p-1 sm:p-2 shadow-2xl">
+                    <Calculator />
+                 </div>
+              </div>
+           </div>
+        </div>
+
       </div>
     </section>
   );
