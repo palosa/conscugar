@@ -163,49 +163,81 @@ const Admin = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-dark text-white flex font-outfit">
-      {/* Sidebar */}
-      <aside className="w-72 bg-black/40 border-r border-white/5 flex flex-col backdrop-blur-xl shrink-0 h-full">
-        <div className="p-8 border-b border-white/5">
-           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary flex items-center justify-center">
-                 <Hammer className="text-dark w-6 h-6" />
-              </div>
-              <h1 className="text-xl font-black uppercase italic tracking-tighter">Admin<span className="text-primary font-normal not-italic">.</span></h1>
-           </div>
-        </div>
+    <div className="flex bg-dark h-screen overflow-hidden text-white font-outfit relative">
+      {/* Mobile Menu Backdrop */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMenuOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-        <nav className="flex-1 p-6 space-y-2">
+      {/* Sidebar - Desktop & Mobile Drawer */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-64 bg-[#0a0a0a] border-r border-white/5 flex flex-col z-[70] transition-transform duration-500 lg:relative lg:translate-x-0 lg:z-0",
+        isMenuOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+          <span className="text-xl font-black tracking-tighter uppercase italic">Con<span className="text-primary">scugar</span> <span className="text-[10px] bg-primary text-dark px-2 py-1 ml-2 not-italic">ADM</span></span>
+          <button onClick={() => setIsMenuOpen(false)} className="lg:hidden">
+             <X className="w-5 h-5 text-white/40" />
+          </button>
+        </div>
+        
+        <nav className="flex-1 p-6 space-y-2 mt-8">
           {[
-            { id: 'leads', icon: Users, label: 'Leads de clientes' },
-            { id: 'pricing', icon: Euro, label: 'Configuración Precios' },
-            { id: 'extras', icon: PlusCircle, label: 'Servicios Extras' },
-            { id: 'projects', icon: LayoutDashboard, label: 'Tipos de Obra' },
-            { id: 'preview', icon: Eye, label: 'Vista Previa Calculadora' },
-            { id: 'settings', icon: Settings, label: 'Ajustes Globales' },
-          ].map((item) => (
+            { id: 'leads', label: 'CRM Leads', icon: Users },
+            { id: 'projects', label: 'Proyectos', icon: Layout },
+            { id: 'extras', label: 'Servicios Extras', icon: PlusCircle },
+            { id: 'pricing', label: 'Matriz Precios', icon: TableProperties },
+            { id: 'settings', label: 'Ajustes Motor', icon: Settings },
+          ].map(tab => (
             <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setIsMenuOpen(false);
+              }}
               className={cn(
-                "w-full flex items-center gap-4 px-4 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all",
-                activeTab === item.id ? "bg-primary text-dark" : "text-white/40 hover:bg-white/5 hover:text-white"
+                "w-full flex items-center gap-4 px-6 py-4 text-xs font-black uppercase tracking-widest transition-all group",
+                activeTab === tab.id 
+                  ? "bg-primary text-dark" 
+                  : "text-white/40 hover:text-white hover:bg-white/5"
               )}
             >
-              <item.icon className="w-4 h-4 shrink-0" />
-              {item.label}
+              <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-dark" : "text-primary")} />
+              {tab.label}
             </button>
           ))}
         </nav>
 
-        <div className="p-6 border-t border-white/5">
-           <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-black text-red-500 hover:bg-red-500/10 transition-all uppercase tracking-widest"><LogOut className="w-4 h-4" /> Cerrar Sesión</button>
+        <div className="p-8 border-t border-white/5">
+           <button 
+             onClick={() => supabase.auth.signOut()}
+             className="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-red-500 hover:text-red-400 transition-colors"
+           >
+             <LogOut className="w-4 h-4" /> Cerrar Sesión
+           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-12 bg-dark/50">
-        <div className="max-w-6xl mx-auto space-y-12">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-dark flex flex-col">
+        {/* Mobile Top Header */}
+        <header className="lg:hidden flex items-center justify-between p-6 border-b border-white/5 bg-black/40 backdrop-blur-md sticky top-0 z-50">
+           <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2">
+              <Menu className="w-6 h-6 text-primary" />
+           </button>
+           <span className="text-sm font-black uppercase tracking-tighter italic">C S G <span className="text-primary">ADM</span></span>
+           <div className="w-6" /> {/* Spacer */}
+        </header>
+
+        <div className="p-6 sm:p-12 max-w-7xl w-full mx-auto space-y-12">
           
           <div className="flex justify-between items-end">
              <h2 className="text-4xl font-black uppercase italic tracking-tighter">{activeTab}</h2>

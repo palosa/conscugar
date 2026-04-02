@@ -475,26 +475,28 @@ const Calculator = () => {
           {step === 6 && (
             <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-700">
                {/* Resumen de Configuración */}
-               <div className="grid grid-cols-3 gap-4 pb-8 border-b border-white/10">
-                  <div className="space-y-1">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-8 border-b border-white/10">
+                  <div className="space-y-1 text-center sm:text-left">
                      <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Proyecto</p>
                      <p className="text-[12px] font-bold uppercase text-white">{config.projectTypes.find(p=>p.id===data.tipo)?.name}</p>
                   </div>
-                  <div className="space-y-1 text-center border-x border-white/10 px-4">
+                  <div className="space-y-1 text-center sm:border-x border-white/10 px-4">
                      <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Superficie</p>
                      <p className="text-[12px] font-bold uppercase text-white">{data.m2} m²</p>
                   </div>
-                  <div className="space-y-1 text-right">
+                  <div className="space-y-1 text-center sm:text-right">
                      <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Calidad</p>
                      <p className="text-[12px] font-bold uppercase text-primary font-black tracking-tight">{config.qualitySettings.find(q=>q.id===data.calidad)?.label}</p>
                   </div>
                </div>
 
-               <div className="bg-black/60 p-12 text-center border border-white/[0.1] relative group shadow-2xl">
+               <div className="bg-black/60 p-8 sm:p-12 text-center border border-white/[0.1] relative group shadow-2xl">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-primary group-hover:w-64 transition-all duration-1000" />
                   <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Presupuesto Final · IVA INCLUIDO</p>
-                  <h2 className="text-7xl sm:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.2)]">{budget.total.toLocaleString()}€</h2>
-                  <div className="flex justify-center gap-12 mt-8 py-6 border-t border-white/10">
+                  <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.2)]">
+                     {budget.total.toLocaleString()}€
+                  </h2>
+                  <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-12 mt-8 py-6 border-t border-white/10">
                      <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">Base (Obra + Extras): <span className="text-white ml-2">{budget.breakdown.base.toLocaleString()}€</span></div>
                      <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{budget.breakdown.iva.toLocaleString()}€</span></div>
                   </div>

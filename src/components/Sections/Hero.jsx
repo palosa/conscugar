@@ -32,20 +32,14 @@ const Hero = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 flex flex-col items-center lg:items-start"
+            className="max-w-4xl mx-auto text-center lg:text-left"
           >
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.3em] mb-4">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> Sagunto · Puerto · Alrededores
-            </div>
-            <h1 className="text-5xl md:text-7xl font-outfit font-black tracking-tighter uppercase leading-[0.95]">
-              Construcciones <br />
-              <span className="text-white/20">Y</span>
-              <span className="text-primary"> Reformas</span><br />
-              <span className="text-white/20">en</span>
-              <span className="text-primary"> Sagunto</span>
+            <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black tracking-tighter uppercase italic leading-[0.85] mb-8">
+              <span className="block text-white">Construcción</span>
+              <span className="block text-primary">Nivel Estudio</span>
             </h1>
-            <p className="max-w-xl text-lg md:text-xl text-white/70 leading-relaxed font-medium">
-               Transformamos viviendas comunes en espacios magistrales. Arquitectura de vanguardia y ejecución técnica de primer nivel en Sagunto.
+            <p className="text-sm sm:text-base lg:text-lg text-white/70 font-bold uppercase tracking-[0.3em] max-w-2xl mx-auto lg:mx-0 mb-12">
+              Transformamos espacios con precisión arquitectónica y acabados de lujo en Sagunto.
             </p>
           </motion.div>
 

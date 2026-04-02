@@ -215,14 +215,14 @@ const Portfolio = () => {
                   </div>
 
                   {/* Detail Info */}
-                  <div className="flex-1 p-10 sm:p-16 flex flex-col justify-between space-y-12">
-                     <div className="space-y-8">
+                  <div className="flex-1 p-8 sm:p-12 flex flex-col justify-between space-y-8">
+                     <div className="space-y-6">
                         <div>
                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{selectedProject.category}</span>
-                           <h2 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase italic mt-2">{selectedProject.title}</h2>
+                           <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase italic mt-2">{selectedProject.title}</h2>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6 pb-6 border-b border-white/5">
+                        <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
                            <div className="flex items-center gap-3">
                               <MapPin className="text-primary w-4 h-4" />
                               <div className="text-[10px] font-black uppercase tracking-widest text-white/30">{selectedProject.location}</div>
