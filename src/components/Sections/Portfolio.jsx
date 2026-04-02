@@ -15,8 +15,8 @@ import bathroomImg from '../../assets/bathroom.png';
 import livingImg from '../../assets/living-room.png';
 
 // Import de nuevas imágenes generadas
-import livingV2 from '/Users/byteflow/.gemini/antigravity/brain/25e1c5bb-f107-4424-a045-0e8438e19e3f/sagunto_living_room_v2_1775132472657.png';
-import kitchenV2 from '/Users/byteflow/.gemini/antigravity/brain/25e1c5bb-f107-4424-a045-0e8438e19e3f/puerto_kitchen_v2_1775132503192.png';
+import livingV2 from '../../assets/living-v2.png';
+import kitchenV2 from '../../assets/kitchen-v2.png';
 
 const projects = [
   { 
