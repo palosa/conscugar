@@ -389,14 +389,14 @@ const Calculator = () => {
                       layout
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ y: -2, borderColor: "rgba(245, 197, 24, 0.4)" }}
+                      whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => updateData('tipo', type.id)}
                       className={cn(
                         "relative p-5 border cursor-pointer transition-all flex flex-col gap-4 group overflow-hidden min-h-[140px] justify-center items-center text-center",
                         isActive
                           ? "border-primary bg-primary/[0.05] shadow-lg"
-                          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
+                          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-primary/40"
                       )}
                     >
                       {isActive && (

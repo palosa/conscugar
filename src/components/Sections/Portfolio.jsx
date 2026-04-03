@@ -71,43 +71,34 @@ const Portfolio = () => {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   return (
-    <section id="portfolio" className="section-container bg-dark pt-32 pb-40 overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-        <div className="space-y-4 max-w-xl">
-          <motion.span 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="text-[10px] font-black tracking-[0.4em] uppercase text-primary"
+    <section id="portfolio" className="bg-dark pt-32 pb-40 overflow-hidden w-full relative z-10">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+          <div className="space-y-4 max-w-xl">
+            <span 
+              className="text-[10px] font-black tracking-[0.4em] uppercase text-primary"
+            >
+              Trayectoria en Camp de Morvedre
+            </span>
+            <h2 
+              className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter text-white"
+            >
+              Nuestras obras en <br/>
+              Sagunto <span className="italic font-normal text-white">y alrededores</span>
+            </h2>
+          </div>
+          <p 
+            className="text-white max-w-xs text-sm leading-relaxed"
           >
-            Trayectoria en Camp de Morvedre
-          </motion.span>
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter"
-          >
-            Nuestras obras en <br/>
-            Sagunto <span className="italic font-normal text-white/40">y alrededores</span>
-          </motion.h2>
+            Desde el Puerto hasta Gilet y Canet d'en Berenguer. Transformamos cada espacio en una referencia local.
+          </p>
         </div>
-        <motion.p 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="text-white/40 max-w-xs text-sm leading-relaxed"
-        >
-          Desde el Puerto hasta Gilet y Canet d'en Berenguer. Transformamos cada espacio en una referencia local.
-        </motion.p>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {projects.map((project, idx) => (
-          <motion.div 
-            key={project.id}
-            initial={{ opacity: 0, y: 15 }}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {projects.map((project, idx) => (
+            <motion.div 
+              key={project.id}
+              initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: idx * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
@@ -220,7 +211,7 @@ const Portfolio = () => {
                      <div className="space-y-6">
                         <div>
                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{selectedProject.category}</span>
-                           <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase italic mt-2">{selectedProject.title}</h2>
+                           <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase italic mt-2 text-white">{selectedProject.title}</h2>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
@@ -261,6 +252,7 @@ const Portfolio = () => {
             </motion.div>
          )}
       </AnimatePresence>
+      </div>
     </section>
   );
 };

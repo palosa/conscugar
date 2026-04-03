@@ -34,8 +34,8 @@ const Process = () => {
     <section className="py-32 bg-dark relative overflow-hidden" id="servicios">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-24 space-y-4">
-           <p className="text-[10px] font-black uppercase text-primary tracking-[0.5em]">The Blueprint</p>
-           <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Nuestro Método</h2>
+           <p className="text-[10px] font-black uppercase text-primary tracking-[0.5em]">La Diferencia</p>
+           <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white">Nuestro Método</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
