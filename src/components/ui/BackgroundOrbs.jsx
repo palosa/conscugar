@@ -29,7 +29,7 @@ const BackgroundOrbs = () => {
           scale: [1, 0.8, 1.1, 1]
         } : {}}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-1/4 right-1/4 w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] bg-white/5 rounded-full blur-[70px] sm:blur-[120px] opacity-30 sm:opacity-30" 
+        className="absolute bottom-1/4 right-1/4 w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] bg-white/5 rounded-full blur-[70px] sm:blur-[80px] opacity-30 sm:opacity-30" 
       />
       <div className="absolute inset-0 bg-dark/60 backdrop-blur-[2px] sm:backdrop-blur-[2px]" />
     </div>

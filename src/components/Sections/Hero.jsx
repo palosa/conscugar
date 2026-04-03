@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import BackgroundOrbs from '../ui/BackgroundOrbs';
 import Calculator from '../Calculator/Calculator';
 import heroImg from '../../assets/hero.png';
@@ -11,7 +11,13 @@ export const Hero = () => {
     offset: ["start start", "end start"]
   });
 
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const y1 = useTransform(smoothProgress, [0, 1], [0, 150]);
 
   return (
     <section ref={ref} className="relative min-h-[90vh] flex items-center pt-32 sm:pt-40 pb-20 overflow-hidden bg-dark">
@@ -35,9 +41,9 @@ export const Hero = () => {
         {/* 🔥 TÍTULO - Ajustado para evitar solapamiento */}
         <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left pt-10 lg:pt-0">
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6"
           >
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.3em]">

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronRight, 
-  ChevronLeft, 
+import {
+  ChevronRight,
+  ChevronLeft,
   ArrowRight,
   ShieldCheck,
   Hammer,
@@ -28,22 +28,46 @@ import { Button } from '../ui/Button';
 import { supabase } from '../../utils/supabase';
 
 const ICON_MAP = {
-  Home: HomeIcon, 
-  ShowerHead, 
-  CookingPot, 
-  Construction, 
-  Building2, 
+  Home: HomeIcon,
+  ShowerHead,
+  CookingPot,
+  Construction,
+  Building2,
   Wrench,
   CheckCircle2
 };
 
+const playHapticTick = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch (e) {
+    // Silently fail if browser blocks AudioContext
+  }
+};
+
 const Calculator = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem('ccg_step');
+    return saved ? Number(saved) : 1;
+  });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [visitRequested, setVisitRequested] = useState(false);
   const containerRef = useRef(null);
-  
+
   const [config, setConfig] = useState({
     projectTypes: [],
     pricingRanges: [],
@@ -52,17 +76,34 @@ const Calculator = () => {
     housingSettings: [],
     globalSettings: []
   });
-  
-  const [data, setData] = useState({
-    tipo: '',
-    m2: 80,
-    calidad: '',
-    vivienda: '',
-    selectedExtras: [],
-    name: '',
-    email: '',
-    phone: ''
+
+  const [data, setData] = useState(() => {
+    const saved = localStorage.getItem('ccg_data');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) { }
+    }
+    return {
+      tipo: '',
+      m2: 0,
+      hasElevator: null,
+      propertyAge: '',
+      calidad: '',
+      vivienda: '',
+      selectedExtras: [],
+      name: '',
+      email: '',
+      phone: ''
+    };
   });
+
+  useEffect(() => {
+    if (step < 7) {
+      localStorage.setItem('ccg_step', step);
+      localStorage.setItem('ccg_data', JSON.stringify(data));
+    }
+  }, [step, data]);
 
   useEffect(() => {
     fetchFullConfig();
@@ -81,7 +122,7 @@ const Calculator = () => {
         supabase.from('housing_settings').select('*'),
         supabase.from('global_settings').select('*')
       ]);
-      
+
       const newConfig = {
         projectTypes: projectsRes.data || [],
         pricingRanges: pricingRes.data || [],
@@ -94,12 +135,12 @@ const Calculator = () => {
       setConfig(newConfig);
 
       if (newConfig.projectTypes.length > 0) {
-         setData(prev => ({
-           ...prev,
-           tipo: prev.tipo || newConfig.projectTypes[0].id,
-           calidad: prev.calidad || (newConfig.qualitySettings.find(s=>s.id==='media')?.id || newConfig.qualitySettings[0]?.id),
-           vivienda: prev.vivienda || (newConfig.housingSettings.find(s=>s.id==='piso')?.id || newConfig.housingSettings[0]?.id)
-         }));
+        setData(prev => ({
+          ...prev,
+          tipo: prev.tipo || newConfig.projectTypes[0].id,
+          calidad: prev.calidad || (newConfig.qualitySettings.find(s => s.id === 'media')?.id || newConfig.qualitySettings[0]?.id),
+          vivienda: prev.vivienda || (newConfig.housingSettings.find(s => s.id === 'piso')?.id || newConfig.housingSettings[0]?.id)
+        }));
       }
     } catch (err) {
       console.error("Error fetching config:", err);
@@ -109,16 +150,21 @@ const Calculator = () => {
   };
 
   const nextStep = async () => {
-    if (step === 5) await handleSubmit();
+    playHapticTick();
+    if (step === 6) await handleSubmit();
     else {
-      setStep(s => Math.min(s + 1, 6));
+      setStep(s => Math.min(s + 1, 7));
       window.scrollTo({ top: document.getElementById('calculadora')?.offsetTop - 100, behavior: 'smooth' });
     }
   };
 
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const prevStep = () => {
+    playHapticTick();
+    setStep(s => Math.max(s - 1, 1));
+  };
 
   const updateData = (key, value) => {
+    playHapticTick();
     setData(prev => {
       const newData = { ...prev, [key]: value };
       if (key === 'tipo') {
@@ -131,6 +177,7 @@ const Calculator = () => {
   };
 
   const toggleExtra = (id) => {
+    playHapticTick();
     setData(prev => ({
       ...prev,
       selectedExtras: prev.selectedExtras.includes(id)
@@ -150,13 +197,15 @@ const Calculator = () => {
         vivienda: data.vivienda, extras: data.selectedExtras,
         estimated_total: budget.total
       }]);
-      
+
       // DISPARADOR PARA RESEND (MODO PREPARACIÓN)
       await sendLeadNotifications(data, budget);
 
-      setStep(6);
+      setStep(7);
+      localStorage.removeItem('ccg_step');
+      localStorage.removeItem('ccg_data');
     } catch (err) {
-      setStep(6);
+      setStep(7);
     } finally {
       setSubmitting(false);
     }
@@ -171,19 +220,19 @@ const Calculator = () => {
     // Header Design
     doc.setFillColor(10, 10, 10);
     doc.rect(0, 0, 210, 40, 'F');
-    
+
     doc.setTextColor(245, 197, 24); // Primary Gold
     doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
     doc.text("CONSCUGAR", 20, 25);
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("ESTUDIO DE REFORMAS Y CONSTRUCCIÓN PREMIUM", 20, 32);
-    
+    doc.text("ESTUDIO DE REFORMAS Y CONSTRUCCIÓN", 20, 32);
+
     doc.setTextColor(150, 150, 150);
-    doc.text(`PRESUPUESTO #CS-${Math.floor(Math.random()*9000)+1000}`, 150, 20);
+    doc.text(`VALORACIÓN #CS-${Math.floor(Math.random() * 9000) + 1000}`, 150, 20);
     doc.text(`FECHA: ${now}`, 150, 25);
     doc.text(`VALIDEZ: 15 DÍAS`, 150, 30);
 
@@ -195,15 +244,15 @@ const Calculator = () => {
     doc.setFont("helvetica", "normal");
     doc.text(`Cliente: ${data.name}`, 20, 62);
     doc.text(`Localización: ${data.vivienda}`, 20, 67);
-    doc.text(`Tipo de Obra: ${config.projectTypes.find(p=>p.id===data.tipo)?.name || data.tipo}`, 20, 72);
+    doc.text(`Tipo de Obra: ${config.projectTypes.find(p => p.id === data.tipo)?.name || data.tipo}`, 20, 72);
     doc.text(`Superficie Estimada: ${data.m2} m²`, 20, 77);
 
     // Main Concept & Inclusions
     doc.line(20, 85, 190, 85);
     doc.setFont("helvetica", "bold");
     doc.text("1. EJECUCIÓN MATERIAL Y MEMORIA TÉCNICA", 20, 95);
-    
-    const inclusions = config.projectTypes.find(p=>p.id===data.tipo)?.inclusions || "Ejecución integral según calidades seleccionadas.";
+
+    const inclusions = config.projectTypes.find(p => p.id === data.tipo)?.inclusions || "Ejecución integral según calidades seleccionadas.";
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const splitInclusions = doc.splitTextToSize(inclusions, 160);
@@ -215,14 +264,14 @@ const Calculator = () => {
     doc.setFont("helvetica", "bold");
     doc.text("DESGLOSE DE PARTIDAS", 20, currentY);
     doc.text("TOTAL", 165, currentY);
-    
+
     currentY += 8;
-    doc.line(20, currentY-5, 190, currentY-5);
-    
+    doc.line(20, currentY - 5, 190, currentY - 5);
+
     doc.setFont("helvetica", "normal");
-    doc.text("Obra Base e Instalaciones (Mano de Obra y Materiales)", 20, currentY);
-    doc.text(`${budget.breakdown.base.toLocaleString()} €`, 165, currentY);
-    
+    doc.text("Instalaciones Generales, Mano de Obra y Ejecución", 20, currentY);
+    doc.text(`${(budget.breakdown.baseMaterial + budget.breakdown.labor).toLocaleString()} €`, 165, currentY);
+
     currentY += 10;
     const selectedExtrasList = config.extras.filter(e => data.selectedExtras.includes(e.id));
     selectedExtrasList.forEach((extra) => {
@@ -236,6 +285,15 @@ const Calculator = () => {
       doc.text(`${Math.round(p).toLocaleString()} €`, 165, currentY);
       currentY += 8;
     });
+
+    // Tasas e Imprevistos Técnicos
+    doc.setFont("helvetica", "bold");
+    doc.text("Gestión de Licencias, Tasas e ICIO (~4%)", 25, currentY);
+    doc.text(`${budget.breakdown.icio.toLocaleString()} €`, 165, currentY);
+    currentY += 8;
+    doc.text("Fondo de Contingencias y Desvíos Técnicos (~5%)", 25, currentY);
+    doc.text(`${budget.breakdown.contingency.toLocaleString()} €`, 165, currentY);
+    currentY += 8;
 
     // Totals
     currentY += 5;
@@ -259,7 +317,7 @@ const Calculator = () => {
     ];
     legal.forEach((line, i) => doc.text(line, 20, 252 + (i * 4)));
 
-    doc.save(`Presupuesto_Conscugar_${data.name.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Valoracion_Conscugar_${data.name.replace(/\s+/g, '_')}.pdf`);
   };
 
   const budget = calculateBudget(data, config);
@@ -272,9 +330,11 @@ const Calculator = () => {
   );
 
   return (
-    <div 
-      className="w-full max-w-3xl mx-auto glass-card shadow-2xl relative transition-all duration-500 overflow-hidden" 
-      id="calculadora" 
+    <motion.div
+      layout
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full max-w-3xl mx-auto glass-card shadow-2xl relative transition-all overflow-hidden"
+      id="calculadora"
       ref={containerRef}
     >
       {/* Subtle Atmospheric Corners */}
@@ -283,278 +343,326 @@ const Calculator = () => {
 
       {/* NEW Minimalist Progress Nodes */}
       <div className="flex justify-center items-center gap-2 sm:gap-4 py-8 bg-black/20 border-b border-white/5 relative z-10">
-         {[1, 2, 3, 4, 5, 6].map(s => (
-            <React.Fragment key={s}>
-               <div className={cn(
-                  "w-2 h-2 rotate-45 transition-all duration-500",
-                  step === s ? "bg-primary shadow-[0_0_10px_#F5C518] scale-125" : 
-                  step > s ? "bg-primary/40" : "bg-white/10"
-               )} />
-               {s < 6 && <div className={cn("w-4 sm:w-8 h-[1px] transition-all duration-500", step > s ? "bg-primary/20" : "bg-white/5")} />}
-            </React.Fragment>
-         ))}
+        {[1, 2, 3, 4, 5, 6, 7].map(s => (
+          <React.Fragment key={s}>
+            <div className={cn(
+              "w-2 h-2 rotate-45 transition-all duration-500",
+              step === s ? "bg-primary shadow-[0_0_10px_#F5C518] scale-125" :
+                step > s ? "bg-primary/40" : "bg-white/10"
+            )} />
+            {s < 7 && <div className={cn("w-4 sm:w-8 h-[1px] transition-all duration-500", step > s ? "bg-primary/20" : "bg-white/5")} />}
+          </React.Fragment>
+        ))}
       </div>
 
       <div className="p-8 sm:p-14 min-h-[520px] flex flex-col relative z-20">
         <div className="mb-10">
-           <span className="text-primary text-[9px] font-black uppercase tracking-[0.4em] mb-1 block">Pasos 0{step}/06</span>
-           <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight italic">
-              {step === 1 && "Tipo de Obra"}
-              {step === 2 && "Superficie"}
-              {step === 3 && "Calidades"}
-              {step === 4 && "Extras"}
-              {step === 5 && "Contacto"}
-              {step === 6 && "Presupuesto Final"}
-           </h2>
+          <span className="text-primary text-[9px] font-black uppercase tracking-[0.4em] mb-1 block">Pasos 0{step}/07</span>
+          <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight italic">
+            {step === 1 && "Tipo de Obra"}
+            {step === 2 && "Superficie"}
+            {step === 3 && "Logística de Edificio"}
+            {step === 4 && "Calidades"}
+            {step === 5 && "Extras"}
+            {step === 6 && "Contacto"}
+            {step === 7 && "Valoración Estimada"}
+          </h2>
         </div>
 
-        <div className="flex-1">
-          {step === 1 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-               {config.projectTypes.map(type => {
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1"
+          >
+            {step === 1 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {config.projectTypes.map(type => {
                   const Icon = ICON_MAP[type.icon] || HomeIcon;
                   const isActive = data.tipo === type.id;
                   return (
-                    <motion.div 
-                        key={type.id} 
-                        layout
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ y: -2, borderColor: "rgba(245, 197, 24, 0.4)" }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => updateData('tipo', type.id)} 
-                        className={cn(
-                          "relative p-5 border cursor-pointer transition-all flex flex-col gap-4 group overflow-hidden min-h-[140px] justify-center items-center text-center",
-                          isActive 
-                            ? "border-primary bg-primary/[0.05] shadow-lg" 
-                            : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
-                        )}
+                    <motion.div
+                      key={type.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ y: -2, borderColor: "rgba(245, 197, 24, 0.4)" }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateData('tipo', type.id)}
+                      className={cn(
+                        "relative p-5 border cursor-pointer transition-all flex flex-col gap-4 group overflow-hidden min-h-[140px] justify-center items-center text-center",
+                        isActive
+                          ? "border-primary bg-primary/[0.05] shadow-lg"
+                          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
+                      )}
                     >
-                       {isActive && (
-                         <motion.div 
-                            layoutId="active-bg"
-                            className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none"
-                         />
-                       )}
-                       
-                       <div className="relative z-10 space-y-3 flex flex-col items-center">
-                          <Icon className={cn(
-                            "w-5 h-5 transition-all duration-300", 
-                            isActive ? "text-primary" : "text-white/60 group-hover:text-white"
-                          )} />
-                          <div className="space-y-1">
-                             <h3 className={cn(
-                               "text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-tight transition-all max-w-[120px]", 
-                               isActive ? "text-white" : "text-gray-400 group-hover:text-white"
-                             )}>{type.name}</h3>
-                             <p className={cn(
-                               "text-[8px] font-bold uppercase tracking-widest transition-all",
-                               isActive ? "text-primary/80" : "text-white/10"
-                             )}>{isActive ? 'Seleccionado' : 'Elegir'}</p>
-                          </div>
-                       </div>
+                      {isActive && (
+                        <motion.div
+                          layoutId="active-bg"
+                          className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none"
+                        />
+                      )}
+
+                      <div className="relative z-10 space-y-3 flex flex-col items-center">
+                        <Icon className={cn(
+                          "w-5 h-5 transition-all duration-300",
+                          isActive ? "text-primary" : "text-white/60 group-hover:text-white"
+                        )} />
+                        <div className="space-y-1">
+                          <h3 className={cn(
+                            "text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-tight transition-all max-w-[120px]",
+                            isActive ? "text-white" : "text-gray-400 group-hover:text-white"
+                          )}>{type.name}</h3>
+                          <p className={cn(
+                            "text-[8px] font-bold uppercase tracking-widest transition-all",
+                            isActive ? "text-primary/80" : "text-white/10"
+                          )}>{isActive ? 'Seleccionado' : 'Elegir'}</p>
+                        </div>
+                      </div>
                     </motion.div>
                   )
-               })}
-            </div>
-          )}
+                })}
+              </div>
+            )}
 
-          {step === 2 && (
-            <div className="space-y-12 py-10 text-center">
+            {step === 2 && (
+              <div className="space-y-12 py-10 text-center">
                 <div className="flex items-center justify-center gap-4 sm:gap-12">
-                   <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - 5))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6"/></button>
-                   <div className="relative group min-w-[150px] flex flex-col items-center">
-                      <input 
-                         type="number" 
-                         inputMode="numeric" 
-                         pattern="[0-9]*"
-                         value={data.m2 === 0 ? '' : data.m2} 
-                         onChange={(e) => {
-                            const val = e.target.value === '' ? 0 : Number(e.target.value.replace(/[^0-9]/g, ''));
-                            updateData('m2', val);
-                         }} 
-                         className="bg-transparent text-7xl sm:text-8xl font-black text-center w-full outline-none text-primary italic tabular-nums transition-all focus:text-white"
-                         placeholder="0"
-                      />
-                      <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/10 font-black italic">M²</div>
-                      <div className="h-[1px] w-32 bg-white/5 relative mt-2 overflow-hidden text-transparent">_</div>
-                   </div>
-                   <button onClick={() => updateData('m2', Number(data.m2) + 5)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6"/></button>
+                  <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - 5))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6" /></button>
+                  <div className="relative group min-w-[150px] flex flex-col items-center">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={data.m2 === 0 ? '' : data.m2}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : Number(e.target.value.replace(/[^0-9]/g, ''));
+                        updateData('m2', val);
+                      }}
+                      className="bg-transparent text-7xl sm:text-8xl font-black text-center w-full outline-none text-primary italic tabular-nums transition-all focus:text-white"
+                      placeholder="0"
+                    />
+                    <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/10 font-black italic">M²</div>
+                    <div className="h-[1px] w-32 bg-white/5 relative mt-2 overflow-hidden text-transparent">_</div>
+                  </div>
+                  <button onClick={() => updateData('m2', Number(data.m2) + 5)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6" /></button>
                 </div>
-               <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {[10, 45, 90, 150, 300].map(m => (
-                     <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/20 hover:text-white")}>{m} m²</button>
+                    <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/20 hover:text-white")}>{m} m²</button>
                   ))}
-               </div>
-            </div>
-          )}
+                </div>
+              </div>
+            )}
 
-          {step === 3 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <div className="grid grid-cols-1 gap-3">
+            {step === 3 && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Ascensor */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-primary block">¿Dispone de ascensor en la finca?</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => updateData('hasElevator', true)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === true ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>SÍ</button>
+                      <button onClick={() => updateData('hasElevator', false)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === false ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>NO</button>
+                    </div>
+                  </div>
+                  {/* Antigüedad */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-primary block">Año de construcción aprox.</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button onClick={() => updateData('propertyAge', 'post_2000')} className={cn("p-3 border transition-all text-xs font-bold", data.propertyAge === 'post_2000' ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>Posterior a 2000</button>
+                      <button onClick={() => updateData('propertyAge', '1970_2000')} className={cn("p-3 border transition-all text-xs font-bold", data.propertyAge === '1970_2000' ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>Entre 1970 y 2000</button>
+                      <button onClick={() => updateData('propertyAge', 'pre_1970')} className={cn("p-3 border transition-all text-xs font-bold", data.propertyAge === 'pre_1970' ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>Anterior a 1970</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="grid grid-cols-1 gap-3">
                   {[...config.qualitySettings].sort((a, b) => a.multiplier - b.multiplier).map(q => {
                     const isActive = data.calidad === q.id;
                     return (
-                      <div 
-                        key={q.id} 
-                        onClick={() => updateData('calidad', q.id)} 
+                      <div
+                        key={q.id}
+                        onClick={() => updateData('calidad', q.id)}
                         className={cn(
-                          "p-6 border cursor-pointer flex flex-col gap-3 transition-all bg-white/[0.02] group relative overflow-hidden", 
+                          "p-6 border cursor-pointer flex flex-col gap-3 transition-all bg-white/[0.02] group relative overflow-hidden",
                           isActive ? "border-primary bg-primary/[0.05]" : "border-white/5 hover:border-white/10"
                         )}
                       >
-                         <div className="flex justify-between items-center">
-                            <span className={cn("text-[11px] font-black uppercase tracking-widest transition-colors", isActive ? "text-white" : "text-white/30 group-hover:text-white/60")}>{q.label}</span>
-                            <div className={cn("w-3 h-3 rounded-none rotate-45 transition-all", isActive ? "bg-primary shadow-[0_0_10px_#F5C518]" : "bg-white/10")} />
-                         </div>
-                         {q.description && (
-                           <p className={cn("text-[10px] leading-relaxed transition-colors max-w-md", isActive ? "text-white/60" : "text-white/20 group-hover:text-white/40")}>
-                             {q.description}
-                           </p>
-                         )}
+                        <div className="flex justify-between items-center">
+                          <span className={cn("text-[11px] font-black uppercase tracking-widest transition-colors", isActive ? "text-white" : "text-white/30 group-hover:text-white/60")}>{q.label}</span>
+                          <div className={cn("w-3 h-3 rounded-none rotate-45 transition-all", isActive ? "bg-primary shadow-[0_0_10px_#F5C518]" : "bg-white/10")} />
+                        </div>
+                        {q.description && (
+                          <p className={cn("text-[10px] leading-relaxed transition-colors max-w-md", isActive ? "text-white/60" : "text-white/20 group-hover:text-white/40")}>
+                            {q.description}
+                          </p>
+                        )}
                       </div>
                     )
                   })}
-               </div>
-            </div>
-          )}
+                </div>
+              </div>
+            )}
 
-          {step === 4 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-2 scrollbar-hide">
-               {config.extras.filter(e => (e.project_types || []).some(t => String(t) === String(data.tipo))).map(extra => {
+            {step === 5 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-2 scrollbar-hide">
+                {config.extras.filter(e => (e.project_types || []).some(t => String(t) === String(data.tipo))).map(extra => {
                   const isSelected = data.selectedExtras.includes(extra.id);
                   return (
-                    <div 
-                        key={extra.id} 
-                        onClick={() => toggleExtra(extra.id)} 
-                        className={cn(
-                          "p-4 border cursor-pointer flex items-center gap-4 transition-all pr-6", 
-                          isSelected ? "border-primary bg-primary/[0.03]" : "border-white/5 bg-white/[0.01] hover:border-white/10"
-                        )}
+                    <div
+                      key={extra.id}
+                      onClick={() => toggleExtra(extra.id)}
+                      className={cn(
+                        "p-4 border cursor-pointer flex items-center gap-4 transition-all pr-6",
+                        isSelected ? "border-primary bg-primary/[0.03]" : "border-white/5 bg-white/[0.01] hover:border-white/10"
+                      )}
                     >
-                       <div className={cn(
-                         "w-6 h-6 shrink-0 border flex items-center justify-center transition-all", 
-                         isSelected ? "bg-primary border-primary text-dark" : "border-white/20 text-transparent"
-                       )}>
-                          <Check className="w-4 h-4 stroke-[4px]" />
-                       </div>
-                       <div className="flex-1 min-w-0">
-                          <p className={cn("text-[10px] font-black uppercase tracking-tight truncate transition-colors", isSelected ? "text-white" : "text-gray-400 group-hover:text-white")}>{extra.name}</p>
-                          <p className="text-[9px] text-primary font-bold tracking-widest mt-0.5">
-                             {(() => {
-                                let p = 0;
-                                if (data.calidad === 'basica') p = extra.price_basic || extra.price;
-                                else if (data.calidad === 'alta') p = extra.price_high || extra.price * 2;
-                                else p = extra.price_medium || extra.price * 1.5;
-                                
-                                if (extra.price_type === 'm2') p *= data.m2;
-                                return `+${Math.round(p).toLocaleString()}€`;
-                             })()}
-                          </p>
-                       </div>
+                      <div className={cn(
+                        "w-6 h-6 shrink-0 border flex items-center justify-center transition-all",
+                        isSelected ? "bg-primary border-primary text-dark" : "border-white/20 text-transparent"
+                      )}>
+                        <Check className="w-4 h-4 stroke-[4px]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn("text-[10px] font-black uppercase tracking-tight truncate transition-colors", isSelected ? "text-white" : "text-gray-400 group-hover:text-white")}>{extra.name}</p>
+                        <p className="text-[9px] text-primary font-bold tracking-widest mt-0.5">
+                          {(() => {
+                            let p = 0;
+                            if (data.calidad === 'basica') p = extra.price_basic || extra.price;
+                            else if (data.calidad === 'alta') p = extra.price_high || extra.price * 2;
+                            else p = extra.price_medium || extra.price * 1.5;
+
+                            if (extra.price_type === 'm2') p *= data.m2;
+                            return `+${Math.round(p).toLocaleString()}€`;
+                          })()}
+                        </p>
+                      </div>
                     </div>
                   );
-               })}
-            </div>
-          )}
+                })}
+              </div>
+            )}
 
-          {step === 5 && (
-            <div className="space-y-4 max-w-lg mx-auto py-1 animate-in fade-in duration-700">
-               <input type="text" value={data.name} onChange={e=>updateData('name', e.target.value)} placeholder="NOMBRE COMPLETO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all uppercase font-bold text-white/80" />
-               <div className="grid grid-cols-2 gap-3">
-                  <input type="tel" value={data.phone} onChange={e=>updateData('phone', e.target.value)} placeholder="TELÉFONO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
-                  <input type="email" value={data.email} onChange={e=>updateData('email', e.target.value)} placeholder="CORREO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
-               </div>
-               <div className="p-6 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
+            {step === 6 && (
+              <div className="space-y-4 max-w-lg mx-auto py-1 animate-in fade-in duration-700">
+                <input type="text" value={data.name} onChange={e => updateData('name', e.target.value)} placeholder="NOMBRE COMPLETO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all uppercase font-bold text-white/80" />
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="tel" value={data.phone} onChange={e => updateData('phone', e.target.value)} placeholder="TELÉFONO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
+                  <input type="email" value={data.email} onChange={e => updateData('email', e.target.value)} placeholder="CORREO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
+                </div>
+                <div className="p-6 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
                   <ShieldCheck className="w-5 h-5 text-primary/60 shrink-0" />
                   <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · Conscugar Sagunto</p>
-               </div>
-            </div>
-          )}
+                </div>
+              </div>
+            )}
 
-          {step === 6 && (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out">
-               {/* Resumen de Configuración */}
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-8 border-b border-white/10">
+            {step === 7 && (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out">
+                {/* Resumen de Configuración */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-8 border-b border-white/10">
                   <div className="space-y-1 text-center sm:text-left">
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Proyecto</p>
-                     <p className="text-[12px] font-bold uppercase text-white">{config.projectTypes.find(p=>p.id===data.tipo)?.name}</p>
+                    <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Proyecto</p>
+                    <p className="text-[12px] font-bold uppercase text-white">{config.projectTypes.find(p => p.id === data.tipo)?.name}</p>
                   </div>
                   <div className="space-y-1 text-center sm:border-x border-white/10 px-4">
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Superficie</p>
-                     <p className="text-[12px] font-bold uppercase text-white">{data.m2} m²</p>
+                    <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Superficie</p>
+                    <p className="text-[12px] font-bold uppercase text-white">{data.m2} m²</p>
                   </div>
                   <div className="space-y-1 text-center sm:text-right">
-                     <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Calidad</p>
-                     <p className="text-[12px] font-bold uppercase text-primary font-black tracking-tight">{config.qualitySettings.find(q=>q.id===data.calidad)?.label}</p>
+                    <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Calidad</p>
+                    <p className="text-[12px] font-bold uppercase text-primary font-black tracking-tight">{config.qualitySettings.find(q => q.id === data.calidad)?.label}</p>
                   </div>
-               </div>
+                </div>
 
-               <div className="bg-black/60 p-8 sm:p-12 text-center border border-white/[0.1] relative group shadow-2xl">
+                <div className="bg-black/60 p-8 sm:p-12 text-center border border-white/[0.1] relative group shadow-2xl">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-primary group-hover:w-64 transition-all duration-1000" />
-                  <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Presupuesto Final · IVA INCLUIDO</p>
+                  <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Valoración Estimada · IVA INCLUIDO</p>
                   <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.2)]">
-                     {budget.total.toLocaleString()}€
+                    {budget.total.toLocaleString()}€
                   </h2>
                   <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-12 mt-8 py-6 border-t border-white/10">
-                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">Base (Obra + Extras): <span className="text-white ml-2">{budget.breakdown.base.toLocaleString()}€</span></div>
-                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{budget.breakdown.iva.toLocaleString()}€</span></div>
+                    <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">PEM + Tasas Netas: <span className="text-white ml-2">{(budget.breakdown.pem + budget.breakdown.icio + budget.breakdown.contingency).toLocaleString()}€</span></div>
+                    <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{budget.breakdown.iva.toLocaleString()}€</span></div>
                   </div>
-               </div>
+                </div>
 
-               {/* Desglose de Extras si existen */}
-               {data.selectedExtras.length > 0 && (
-                 <div className="space-y-3">
+                {/* Desglose de Extras si existen */}
+                {data.selectedExtras.length > 0 && (
+                  <div className="space-y-3">
                     <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Servicios Adicionales Incluidos:</p>
                     <div className="flex flex-wrap gap-2">
-                       {config.extras.filter(e => data.selectedExtras.includes(e.id)).map(extra => (
-                         <span key={extra.id} className="bg-white/5 border border-white/5 px-3 py-1.5 text-[9px] font-bold uppercase text-white/70 italic">
-                            + {extra.name}
-                         </span>
-                       ))}
+                      {config.extras.filter(e => data.selectedExtras.includes(e.id)).map(extra => (
+                        <span key={extra.id} className="bg-white/5 border border-white/5 px-3 py-1.5 text-[9px] font-bold uppercase text-white/70 italic">
+                          + {extra.name}
+                        </span>
+                      ))}
                     </div>
-                 </div>
-               )}
-               
-               <div className="min-h-[120px] flex items-center justify-center">
+                  </div>
+                )}
+
+                <div className="min-h-[120px] flex items-center justify-center">
                   {!visitRequested ? (
                     <div className="w-full flex flex-col sm:flex-row gap-3 animate-in fade-in duration-500">
-                       <Button 
-                         className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] shadow-xl shadow-primary/20" 
-                         onClick={() => setVisitRequested(true)}
-                       >
-                         SOLICITAR VISITA TÉCNICA GRATUITA
-                       </Button>
-                       <Button variant="outline" className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] border-white/20 text-white hover:border-primary hover:text-primary transition-all bg-white/[0.02]" onClick={generatePDF}>
-                          <Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR PRESUPUESTO PDF
-                       </Button>
+                      <Button
+                        className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] shadow-xl shadow-primary/20"
+                        onClick={() => setVisitRequested(true)}
+                      >
+                        SOLICITAR VISITA TÉCNICA GRATUITA
+                      </Button>
+                      <Button variant="outline" className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] border-white/20 text-white hover:border-primary hover:text-primary transition-all bg-white/[0.02]" onClick={generatePDF}>
+                        <Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR VALORACIÓN PDF
+                      </Button>
                     </div>
                   ) : (
                     <div className="w-full p-8 bg-primary/10 border border-primary/20 text-center space-y-3 animate-in zoom-in-95 duration-500">
-                       <p className="text-primary font-black uppercase tracking-[0.3em] text-xs">¡Solicitud Recibida!</p>
-                       <p className="text-white/80 text-sm font-medium leading-relaxed">
-                          Un técnico de Conscugar se pondrá en contacto contigo en los <br/> próximos días para concertar una visita y validar el presupuesto.
-                       </p>
+                      <p className="text-primary font-black uppercase tracking-[0.3em] text-xs">¡Solicitud Recibida!</p>
+                      <p className="text-white/80 text-sm font-medium leading-relaxed">
+                        Un técnico de Conscugar se pondrá en contacto contigo en los <br /> próximos días para concertar una visita y confeccionar el presupuesto final.
+                      </p>
                     </div>
                   )}
-               </div>
-            </div>
-          )}
-        </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Footer Nav */}
-         <div className="mt-12 pt-8 border-t border-white/[0.03] flex items-center justify-between">
-            <button onClick={prevStep} className={cn("text-[10px] font-black uppercase tracking-widest transition-all p-4", step === 1 || step === 6 ? "invisible" : "text-white/10 hover:text-white/40")}>ATRÁS</button>
-            {step < 5 ? (
-               <Button onClick={nextStep} disabled={step===1 && !data.tipo} className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">CONTINUAR</Button>
-            ) : step === 5 ? (
-               <Button onClick={nextStep} disabled={!data.name || !data.email || !data.phone} className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">{submitting ? 'VALIDANDO...' : 'CALCULAR'}</Button>
-            ) : (
-               <button onClick={() => setStep(1)} className="text-[10px] font-black uppercase tracking-widest text-white/10 hover:text-white transition-all p-4">NUEVO CÁLCULO</button>
-            )}
-         </div>
+        <div className="mt-12 pt-8 border-t border-white/[0.03] flex items-center justify-between">
+          <button onClick={prevStep} className={cn("text-[10px] font-black uppercase tracking-widest transition-all p-4", step === 1 || step === 7 ? "invisible" : "text-white/10 hover:text-white/40")}>ATRÁS</button>
+          {step < 6 ? (
+            <Button onClick={nextStep} disabled={
+              (step === 1 && !data.tipo) ||
+              (step === 2 && Number(data.m2) < 1) ||
+              (step === 3 && (data.hasElevator === null || !data.propertyAge))
+            } className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">CONTINUAR</Button>
+          ) : step === 6 ? (
+            <Button onClick={nextStep} disabled={!data.name || !data.email || !data.phone} className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">{submitting ? 'VALIDANDO...' : 'CALCULAR'}</Button>
+          ) : (
+            <button onClick={() => {
+              playHapticTick();
+              setStep(1);
+              setData({
+                tipo: config.projectTypes[0]?.id || '', m2: 0, hasElevator: null, propertyAge: '', calidad: '', vivienda: '',
+                selectedExtras: [], name: '', email: '', phone: ''
+              });
+              setVisitRequested(false);
+              localStorage.removeItem('ccg_step');
+              localStorage.removeItem('ccg_data');
+            }} className="text-[10px] font-black uppercase tracking-widest text-white/10 hover:text-white transition-all p-4">NUEVO CÁLCULO</button>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

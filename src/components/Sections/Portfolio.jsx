@@ -107,10 +107,10 @@ const Portfolio = () => {
         {projects.map((project, idx) => (
           <motion.div 
             key={project.id}
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: idx * 0.1, duration: 0.8 }}
+            transition={{ delay: idx * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="group relative h-[500px] overflow-hidden bg-dark-lighter border border-white/5 cursor-pointer"
             onClick={() => {
                setSelectedProject(project);
@@ -162,9 +162,10 @@ const Portfolio = () => {
                </motion.button>
 
                <motion.div 
-                  initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                  initial={{ y: 30, opacity: 0, scale: 0.98 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
-                  exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                  exit={{ y: 20, opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full max-w-6xl flex flex-col lg:flex-row bg-dark-lighter border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.8)] min-h-[70vh]"
                >
                   {/* Gallery Section */}

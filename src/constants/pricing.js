@@ -7,7 +7,7 @@
  * @param {Object} config - Configuración completa desde Supabase
  */
 export const calculateBudget = (data, config = {}) => {
-  const { tipo, m2, calidad, vivienda, selectedExtras } = data;
+  const { tipo, m2, calidad, vivienda, selectedExtras, hasElevator, propertyAge } = data;
   const { 
     projectTypes = [], 
     pricingRanges = [], 
@@ -19,76 +19,101 @@ export const calculateBudget = (data, config = {}) => {
   
   if (!tipo || !m2 || !calidad || !vivienda) return null;
   
-  // 1. Encontrar el Precio Base (por rango o por fallback)
-  let pricePerM2 = 300; // Fallback absoluto
+  // 1. Encontrar el Precio Base (Referencia a 80m2)
+  let baseReferencePrice = 300; 
   const projectType = projectTypes.find(p => p.id === tipo);
   if (projectType) {
-    pricePerM2 = projectType.base_price_fallback;
+    baseReferencePrice = projectType.base_price_fallback || 300;
   }
 
-  // Lógica de Rangos Dinámicos
-  const range = pricingRanges.find(p => 
-    p.project_type === tipo && 
-    m2 >= p.range_min && 
-    m2 <= p.range_max
-  );
+  // Si existen rangos explícitos, los usamos como referencia. Si no, escalamos matemáticamente.
+  const range = pricingRanges.find(p => p.project_type === tipo && m2 >= p.range_min && m2 <= p.range_max);
   if (range) {
-    pricePerM2 = range.price_per_m2;
+    baseReferencePrice = range.price_per_m2;
   }
 
-  // 2. Aplicar Multiplicadores Dinámicos
+  // 2. Aplicar Economía de Escala Continua (Curva de Descuento por Volumen)
+  // Pivota en 80m2. Viviendas pequeñas (<80) encarecen el m2, grandes (>80) lo abaratan geométricamente.
+  const safeM2 = Math.max(Number(m2), 5); // Evitar división por 0 o tamaños absurdos
+  const scaleFactor = Math.pow(80 / safeM2, 0.15); 
+  const scaledPricePerM2 = baseReferencePrice * scaleFactor;
+
+  // 3. Multiplicadores Físicos y de Logística
   const qSetting = qualitySettings.find(s => s.id === calidad) || { multiplier: 1.0 };
   const hSetting = housingSettings.find(s => s.id === vivienda) || { multiplier: 1.0 };
+  
+  // Riesgos por Antigüedad
+  let ageMultiplier = 1.0;
+  if (propertyAge === 'pre_1970') ageMultiplier = 1.20; // +20% costes ocultos de demolición técnica
+  else if (propertyAge === '1970_2000') ageMultiplier = 1.08; // +8% actualización de instalaciones
   
   // Decidir método de cálculo base: Fijo vs Proporcional a m2
   let baseTotal = 0;
   if (projectType?.base_price_type === 'fixed') {
-     baseTotal = pricePerM2 * qSetting.multiplier * hSetting.multiplier;
+     baseTotal = baseReferencePrice * qSetting.multiplier * hSetting.multiplier * ageMultiplier;
   } else {
-     baseTotal = pricePerM2 * m2 * qSetting.multiplier * hSetting.multiplier;
+     baseTotal = scaledPricePerM2 * safeM2 * qSetting.multiplier * hSetting.multiplier * ageMultiplier;
   }
   
-  // 3. Aplicar Extras Dinámicos (Matriz de Calidad y Superficie)
+  // 4. Aplicar Extras Dinámicos 
   const extrasTotal = selectedExtras.reduce((acc, extraId) => {
     const extra = extras.find(e => e.id === extraId);
     if (!extra) return acc;
     
-    // Seleccionar el precio de la matriz según la calidad
     let extraPrice = 0;
     if (calidad === 'basica') extraPrice = Number(extra.price_basic || extra.price || 0);
     else if (calidad === 'alta') extraPrice = Number(extra.price_high || extra.price * 2 || 0);
-    else extraPrice = Number(extra.price_medium || extra.price * 1.5 || 0); // Media por defecto
+    else extraPrice = Number(extra.price_medium || extra.price * 1.5 || 0);
     
-    // Aplicar multiplicador si el extra es proporcional a los metros cuadrados
     if (extra.price_type === 'm2') {
-       extraPrice *= Number(m2);
+       extraPrice *= safeM2;
     }
-
     return acc + extraPrice;
   }, 0);
   
-  // 4. Aplicar Márgenes de Error (desde ajustes globales)
-  const marginSetting = globalSettings.find(s => s.key === 'price_margin');
-  const margin = marginSetting ? Number(marginSetting.value) : 0.15; // ±15% defecto
+  // 5. Costes de Mano de Obra y Sobreesfuerzo Logístico
+  // Penalización si no hay ascensor (acarreo manual de escombro y material)
+  let laborLogisticMultiplier = 1.0;
+  if (hasElevator === false) {
+    laborLogisticMultiplier = 1.15; // +15% de tiempo de peones y encarecimiento de grúa
+  }
 
-  // Mano de Obra (Configurada por Admin)
   const laborSetting = globalSettings.find(s => s.key === 'labor_cost_m2');
-  const laborCostM2 = laborSetting ? Number(laborSetting.value) : 150; // 150€/m2 por defecto
-  const laborTotal = laborCostM2 * m2 * qSetting.multiplier;
+  const laborCostM2 = laborSetting ? Number(laborSetting.value) : 150; 
+  const laborTotal = laborCostM2 * safeM2 * qSetting.multiplier * laborLogisticMultiplier;
   
-  const subtotal = Math.round(baseTotal + extrasTotal + laborTotal);
-  const iva = Math.round(subtotal * 0.21);
-  const totalWithIVA = subtotal + iva;
+  // 6. SUMA PEM (Presupuesto de Ejecución Material)
+  const subtotalPEM = Math.round(baseTotal + extrasTotal + laborTotal);
+  
+  // 7. Impuestos Técnicos y Gestiones (ICIO, Tasas, Colegio) -> ~4% del PEM
+  const icioTax = Math.round(subtotalPEM * 0.04);
+  
+  // 8. Fondo de Imprevistos (Contingencia Técnica) -> ~5%
+  const contingencyMargin = Math.round(subtotalPEM * 0.05);
+
+  const totalGross = subtotalPEM + icioTax + contingencyMargin;
+  
+  // 9. Aplicar IVA Final 
+  const iva = Math.round(totalGross * 0.21);
+  const totalWithIVA = totalGross + iva;
+  
+  // Margen publicitario para Mostrar (Ej: ±15% de desviación teórica si se quiere mostrar en web)
+  const marginSetting = globalSettings.find(s => s.key === 'price_margin');
+  const margin = marginSetting ? Number(marginSetting.value) : 0.15; 
   
   return {
     min: Math.round(totalWithIVA * (1 - margin)),
     max: Math.round(totalWithIVA * (1 + margin)),
     total: totalWithIVA,
     breakdown: {
-      base: subtotal,
+      pem: subtotalPEM,
+      baseMaterial: Math.round(baseTotal),
+      extras: extrasTotal,
+      labor: Math.round(laborTotal),
+      icio: icioTax,
+      contingency: contingencyMargin,
       iva: iva,
-      pricePerM2: Math.round(pricePerM2),
-      marginPercent: Math.round(margin * 100)
+      pricePerM2: Math.round(scaledPricePerM2)
     }
   };
 };
