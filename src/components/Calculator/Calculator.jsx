@@ -165,7 +165,7 @@ const Calculator = () => {
       if (newConfig.projectTypes.length > 0) {
         setData(prev => ({
           ...prev,
-          tipo: prev.tipo || newConfig.projectTypes[0].id,
+          tipo: prev.tipo,
           calidad: prev.calidad || (newConfig.qualitySettings.find(s => s.id === 'media')?.id || newConfig.qualitySettings[0]?.id),
           vivienda: prev.vivienda || (newConfig.housingSettings.find(s => s.id === 'piso')?.id || newConfig.housingSettings[0]?.id)
         }));
