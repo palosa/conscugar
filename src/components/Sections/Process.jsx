@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { MessageSquare, Layout, Calculator, Construction } from 'lucide-react';
 
 const steps = [
@@ -30,17 +30,38 @@ const steps = [
 ];
 
 const Process = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const yBg = useTransform(scrollYProgress, [0, 1], [-60, 60]);
+
   return (
-    <section className="py-32 bg-dark relative overflow-hidden" id="servicios">
+    <section 
+      ref={containerRef}
+      className="py-32 bg-dark relative overflow-hidden" 
+      id="servicios" 
+      aria-labelledby="process-heading"
+    >
+      {/* Parallax Background Layer */}
+      <motion.div 
+        style={{ y: yBg }}
+        className="absolute top-20 left-10 text-[14vw] font-black uppercase text-white/[0.035] pointer-events-none select-none tracking-widest italic leading-none"
+      >
+        METODO
+      </motion.div>
+
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-24 space-y-4">
            <p className="text-[10px] font-black uppercase text-primary tracking-[0.5em]">La Diferencia</p>
-           <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white">Nuestro Método</h2>
+           <h2 id="process-heading" className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white">Nuestro Método</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" aria-label="Pasos del proceso Conscugar">
           {steps.map((step, idx) => (
-            <motion.div
+            <motion.li
               key={idx}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -68,9 +89,9 @@ const Process = () => {
               {idx < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-[1px] bg-white/5 z-0" />
               )}
-            </motion.div>
+            </motion.li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );

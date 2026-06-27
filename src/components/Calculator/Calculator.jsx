@@ -27,6 +27,24 @@ import { cn } from '../../utils/cn';
 import { Button } from '../ui/Button';
 import { supabase } from '../../utils/supabase';
 
+const useCountUp = (target, active) => {
+  const [value, setValue] = React.useState(0);
+  React.useEffect(() => {
+    if (!active || !target) { setValue(0); return; }
+    const duration = 1800;
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      setValue(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, active]);
+  return value;
+};
+
 const ICON_MAP = {
   Home: HomeIcon,
   ShowerHead,
@@ -66,6 +84,8 @@ const Calculator = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [visitRequested, setVisitRequested] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const containerRef = useRef(null);
 
   const [config, setConfig] = useState({
@@ -108,6 +128,14 @@ const Calculator = () => {
   useEffect(() => {
     fetchFullConfig();
   }, []);
+
+  // Auto-avance al seleccionar tipo de obra en paso 1
+  useEffect(() => {
+    if (step === 1 && data.tipo) {
+      const t = setTimeout(() => setStep(s => s === 1 ? 2 : s), 420);
+      return () => clearTimeout(t);
+    }
+  }, [data.tipo]);
 
 
   const fetchFullConfig = async () => {
@@ -153,23 +181,42 @@ const Calculator = () => {
     playHapticTick();
     if (step === 6) await handleSubmit();
     else {
-      setStep(s => Math.min(s + 1, 7));
+      setStep(s => {
+        let n = s + 1;
+        if (n === 3 && data.tipo === 'obra_nueva') n = 4;
+        return Math.min(n, 7);
+      });
       window.scrollTo({ top: document.getElementById('calculadora')?.offsetTop - 100, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
     playHapticTick();
-    setStep(s => Math.max(s - 1, 1));
+    setStep(s => {
+      let p = s - 1;
+      if (p === 3 && data.tipo === 'obra_nueva') p = 2;
+      return Math.max(p, 1);
+    });
   };
 
   const updateData = (key, value) => {
     playHapticTick();
     setData(prev => {
-      const newData = { ...prev, [key]: value };
+      let val = value;
+      
+      // Control lógico de límites de entrada
+      if (key === 'm2') {
+         const isBano = prev.tipo.includes('bano') || prev.tipo.includes('baño');
+         const isCocina = prev.tipo.includes('cocina');
+         const maxM2 = isBano ? 30 : isCocina ? 60 : 3000;
+         val = Math.min(Math.max(0, Number(val) || 0), maxM2);
+      }
+
+      const newData = { ...prev, [key]: val };
+
       if (key === 'tipo') {
         newData.selectedExtras = [];
-        const projectType = config.projectTypes.find(p => p.id === value);
+        const projectType = config.projectTypes.find(p => p.id === val);
         if (projectType && projectType.default_m2) newData.m2 = projectType.default_m2;
       }
       return newData;
@@ -186,16 +233,38 @@ const Calculator = () => {
     }));
   };
 
+  // Validación estricta de formato de contacto
+  const validateContact = () => {
+    const errors = {};
+    if (!data.name.trim()) errors.name = 'El nombre es obligatorio';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!data.email.trim()) errors.email = 'El email es obligatorio';
+    else if (!emailRegex.test(data.email)) errors.email = 'Formato de email no válido';
+    const phoneClean = data.phone.replace(/\s/g, '');
+    if (!phoneClean) errors.phone = 'El teléfono es obligatorio';
+    else if (!/^[+]?[0-9]{9,15}$/.test(phoneClean)) errors.phone = 'Mínimo 9 dígitos';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!data.name || !data.email || !data.phone) return alert("Rellena todos los campos.");
+    if (!validateContact()) return;
     setSubmitting(true);
     const budget = calculateBudget(data, config);
     try {
       await supabase.from('leads').insert([{
-        name: data.name, email: data.email, phone: data.phone,
-        project_type: data.tipo, m2: data.m2, calidad: data.calidad,
-        vivienda: data.vivienda, extras: data.selectedExtras,
-        estimated_total: budget.total
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        tipo: data.tipo,
+        m2: data.m2,
+        calidad: data.calidad,
+        vivienda: data.vivienda,
+        selected_extras: data.selectedExtras,
+        has_elevator: data.hasElevator,
+        property_age: data.propertyAge,
+        total_budget: budget.total,
+        breakdown: budget.breakdown
       }]);
 
       // DISPARADOR PARA RESEND (MODO PREPARACIÓN)
@@ -243,7 +312,7 @@ const Calculator = () => {
     doc.text("DATOS DEL PROYECTO:", 20, 55);
     doc.setFont("helvetica", "normal");
     doc.text(`Cliente: ${data.name}`, 20, 62);
-    doc.text(`Localización: ${data.vivienda}`, 20, 67);
+    doc.text(`Localización: ${config.housingSettings.find(h => h.id === data.vivienda)?.label || data.vivienda}`, 20, 67);
     doc.text(`Tipo de Obra: ${config.projectTypes.find(p => p.id === data.tipo)?.name || data.tipo}`, 20, 72);
     doc.text(`Superficie Estimada: ${data.m2} m²`, 20, 77);
 
@@ -252,7 +321,7 @@ const Calculator = () => {
     doc.setFont("helvetica", "bold");
     doc.text("1. EJECUCIÓN MATERIAL Y MEMORIA TÉCNICA", 20, 95);
 
-    const inclusions = config.projectTypes.find(p => p.id === data.tipo)?.inclusions || "Ejecución integral según calidades seleccionadas.";
+    const inclusions = config.projectTypes.find(p => p.id === data.tipo)?.description || "Ejecución integral según calidades seleccionadas.";
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const splitInclusions = doc.splitTextToSize(inclusions, 160);
@@ -262,37 +331,62 @@ const Calculator = () => {
     let currentY = 105 + (splitInclusions.length * 5);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("DESGLOSE DE PARTIDAS", 20, currentY);
+    doc.text("DESGLOSE DE PARTIDAS TÉCNICAS (P.E.M.)", 20, currentY);
     doc.text("TOTAL", 165, currentY);
 
     currentY += 8;
     doc.line(20, currentY - 5, 190, currentY - 5);
 
     doc.setFont("helvetica", "normal");
-    doc.text("Instalaciones Generales, Mano de Obra y Ejecución", 20, currentY);
+    doc.text("Ejecución Base (PEM Materiales y Mano de Obra)", 20, currentY);
     doc.text(`${(budget.breakdown.baseMaterial + budget.breakdown.labor).toLocaleString()} €`, 165, currentY);
 
     currentY += 10;
     const selectedExtrasList = config.extras.filter(e => data.selectedExtras.includes(e.id));
     selectedExtrasList.forEach((extra) => {
-      let p = 0;
-      if (data.calidad === 'basica') p = extra.price_basic || extra.price;
-      else if (data.calidad === 'alta') p = extra.price_high || extra.price * 2;
-      else p = extra.price_medium || extra.price * 1.5;
-      if (extra.price_type === 'm2') p *= data.m2;
+      let p = Number(extra.price || 0);
+      
+      if (extra.is_quality_dependent !== false) {
+         if (data.calidad === 'basica') p = extra.price_basic || p;
+         else if (data.calidad === 'alta') p = extra.price_high || p * 2;
+         else p = extra.price_medium || p * 1.5;
+      }
+      
+      if (extra.price_type === 'm2' && p < 150) p *= Math.max(Number(data.m2), 5); // Consistente con SafeM2 y pricing.js
 
       doc.text(`+ ${extra.name}`, 25, currentY);
       doc.text(`${Math.round(p).toLocaleString()} €`, 165, currentY);
       currentY += 8;
     });
 
-    // Tasas e Imprevistos Técnicos
+    // Subtotal PEM
+    doc.line(20, currentY - 5, 190, currentY - 5);
     doc.setFont("helvetica", "bold");
+    doc.text("SUBTOTAL P.E.M. (Ejecución Material)", 20, currentY);
+    doc.text(`${budget.breakdown.pem.toLocaleString()} €`, 165, currentY);
+    currentY += 10;
+
+    // Tasas e Imprevistos Técnicos
+    doc.setFont("helvetica", "normal");
     doc.text("Gestión de Licencias, Tasas e ICIO (~4%)", 25, currentY);
     doc.text(`${budget.breakdown.icio.toLocaleString()} €`, 165, currentY);
     currentY += 8;
     doc.text("Fondo de Contingencias y Desvíos Técnicos (~5%)", 25, currentY);
     doc.text(`${budget.breakdown.contingency.toLocaleString()} €`, 165, currentY);
+    currentY += 10;
+
+    // Base Imponible
+    const baseImponible = budget.breakdown.pem + budget.breakdown.icio + budget.breakdown.contingency;
+    doc.line(20, currentY - 5, 190, currentY - 5);
+    doc.setFont("helvetica", "bold");
+    doc.text("BASE IMPONIBLE (NETO)", 20, currentY);
+    doc.text(`${baseImponible.toLocaleString()} €`, 165, currentY);
+    currentY += 10;
+
+    // IVA
+    doc.setFont("helvetica", "normal");
+    doc.text(`I.V.A. Aplicable (${budget.breakdown.ivaPercent}%)`, 25, currentY);
+    doc.text(`${budget.breakdown.iva.toLocaleString()} €`, 165, currentY);
     currentY += 8;
 
     // Totals
@@ -300,7 +394,7 @@ const Calculator = () => {
     doc.setFillColor(245, 245, 245);
     doc.rect(130, currentY, 60, 25, 'F');
     doc.setFont("helvetica", "bold");
-    doc.text("SUMA TOTAL (NETO):", 135, currentY + 10);
+    doc.text("VALORACIÓN TOTAL:", 135, currentY + 10);
     doc.setFontSize(14);
     doc.text(`${budget.total.toLocaleString()} €`, 135, currentY + 18);
 
@@ -312,15 +406,24 @@ const Calculator = () => {
       "* El presente documento constituye una valoración estimativa basada en los datos facilitados por el cliente.",
       "* Precios calculados según base de datos actual de construcción. S.E.U.O. (Salvo Error u Omisión).",
       "* El presupuesto final quedará supeditado a la visita técnica presencial y mediciones reales en obra.",
-      "* IVA no incluido en las cifras mostradas.",
+      `* I.V.A. del ${budget.breakdown.ivaPercent}% incluido en el presupuesto total estimado.`,
       "* Este documento no tiene valor contractual y caduca a los 15 días de su emisión."
     ];
     legal.forEach((line, i) => doc.text(line, 20, 252 + (i * 4)));
 
     doc.save(`Valoracion_Conscugar_${data.name.replace(/\s+/g, '_')}.pdf`);
+    setPdfDownloaded(true);
   };
 
   const budget = calculateBudget(data, config);
+  const animatedTotal = useCountUp(budget?.total, step === 7);
+
+  // Validación de formato en tiempo real para deshabilitar/habilitar el botón CALCULAR
+  const isContactFormatValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneClean = (data.phone || '').replace(/\s/g, '');
+    return data.name?.trim() && emailRegex.test(data.email) && /^[+]?[0-9]{9,15}$/.test(phoneClean);
+  };
 
   if (loading) return (
     <div className="w-full max-w-4xl mx-auto glass-card h-[500px] flex flex-col items-center justify-center gap-4">
@@ -341,18 +444,33 @@ const Calculator = () => {
       <div className="absolute top-0 left-0 w-48 h-48 bg-primary/5 blur-[80px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-48 h-48 bg-primary/5 blur-[80px] pointer-events-none" />
 
-      {/* NEW Minimalist Progress Nodes */}
-      <div className="flex justify-center items-center gap-2 sm:gap-4 py-8 bg-black/20 border-b border-white/5 relative z-10">
-        {[1, 2, 3, 4, 5, 6, 7].map(s => (
-          <React.Fragment key={s}>
-            <div className={cn(
-              "w-2 h-2 rotate-45 transition-all duration-500",
-              step === s ? "bg-primary shadow-[0_0_10px_#F5C518] scale-125" :
-                step > s ? "bg-primary/40" : "bg-white/10"
-            )} />
-            {s < 7 && <div className={cn("w-4 sm:w-8 h-[1px] transition-all duration-500", step > s ? "bg-primary/20" : "bg-white/5")} />}
-          </React.Fragment>
-        ))}
+      {/* Progress Bar con Nombres de Paso */}
+      <div className="px-6 pt-5 pb-4 bg-black/20 border-b border-white/5 relative z-10">
+        <div className="flex items-start justify-between">
+          {['Obra', 'M²', 'Edificio', 'Calidad', 'Extras', 'Contacto', 'Resultado'].map((label, i) => {
+            const s = i + 1;
+            const isActive = step === s;
+            const isDone = step > s;
+            return (
+              <React.Fragment key={s}>
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-6 h-6 flex items-center justify-center text-[8px] font-black transition-all duration-500",
+                    isActive ? "bg-primary text-dark shadow-[0_0_14px_rgba(245,197,24,0.5)] scale-110" :
+                    isDone ? "bg-primary/20 text-primary" : "bg-white/5 text-white/15"
+                  )}>
+                    {isDone ? <Check className="w-3 h-3 stroke-[4px]" /> : s}
+                  </div>
+                  <span className={cn(
+                    "text-[7px] font-black uppercase tracking-wider hidden sm:block transition-all leading-none",
+                    isActive ? "text-primary" : isDone ? "text-white/25" : "text-white/10"
+                  )}>{label}</span>
+                </div>
+                {s < 7 && <div className={cn("flex-1 h-[1px] mt-3 mx-0.5 sm:mx-1 transition-all duration-700", isDone ? "bg-primary/30" : "bg-white/5")} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
 
       <div className="p-8 sm:p-14 min-h-[520px] flex flex-col relative z-20">
@@ -428,48 +546,82 @@ const Calculator = () => {
               </div>
             )}
 
-            {step === 2 && (
-              <div className="space-y-12 py-10 text-center">
-                <div className="flex items-center justify-center gap-4 sm:gap-12">
-                  <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - 5))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6" /></button>
-                  <div className="relative group min-w-[150px] flex flex-col items-center">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={data.m2 === 0 ? '' : data.m2}
-                      onChange={(e) => {
-                        const val = e.target.value === '' ? 0 : Number(e.target.value.replace(/[^0-9]/g, ''));
-                        updateData('m2', val);
-                      }}
-                      className="bg-transparent text-7xl sm:text-8xl font-black text-center w-full outline-none text-primary italic tabular-nums transition-all focus:text-white"
-                      placeholder="0"
-                    />
-                    <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/10 font-black italic">M²</div>
-                    <div className="h-[1px] w-32 bg-white/5 relative mt-2 overflow-hidden text-transparent">_</div>
+            {step === 2 && (() => {
+              // Presets adaptativos según tipo de obra
+              const isBano = data.tipo?.includes('bano') || data.tipo?.includes('baño');
+              const isCocina = data.tipo?.includes('cocina');
+              const presets = isBano ? [4, 6, 8, 12, 18] : isCocina ? [8, 12, 16, 24, 35] : [30, 60, 90, 150, 300];
+              const step2 = isBano ? 1 : isCocina ? 2 : 5;
+              return (
+                <div className="space-y-12 py-10 text-center">
+                  <div className="flex items-center justify-center gap-4 sm:gap-12">
+                    <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - step2))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6" /></button>
+                    <div className="relative group min-w-[150px] flex flex-col items-center">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={data.m2 === 0 ? '' : data.m2}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : Math.min(Number(e.target.value.replace(/[^0-9]/g, '')), 2000);
+                          updateData('m2', val);
+                        }}
+                        max={2000}
+                        className="bg-transparent text-7xl sm:text-8xl font-black text-center w-full outline-none text-primary italic tabular-nums transition-all focus:text-white"
+                        placeholder="0"
+                      />
+                      <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/10 font-black italic">M²</div>
+                      <div className="h-[1px] w-32 bg-white/5 relative mt-2 overflow-hidden text-transparent">_</div>
+                    </div>
+                    <button onClick={() => updateData('m2', Number(data.m2) + step2)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6" /></button>
                   </div>
-                  <button onClick={() => updateData('m2', Number(data.m2) + 5)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6" /></button>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {presets.map(m => (
+                      <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/20 hover:text-white")}>{m} m²</button>
+                    ))}
+                  </div>
+                  {Number(data.m2) > 0 && Number(data.m2) < 15 && (
+                    <p className="text-[9px] text-amber-400/60 font-bold uppercase tracking-widest">Superficie muy pequeña. ¿Es solo una estancia?</p>
+                  )}
+                  <p className="text-[8px] text-white/15 font-bold uppercase tracking-widest">Máx. 2.000 m² · ¿No sabes los m²? Confírmalo en la visita técnica gratuita.</p>
                 </div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {[10, 45, 90, 150, 300].map(m => (
-                    <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/20 hover:text-white")}>{m} m²</button>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {step === 3 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Ascensor */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-primary block">¿Dispone de ascensor en la finca?</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button onClick={() => updateData('hasElevator', true)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === true ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>SÍ</button>
-                      <button onClick={() => updateData('hasElevator', false)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === false ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>NO</button>
-                    </div>
+                {/* Tipo de Vivienda */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-primary block">¿En qué formato de residencia se actuará?</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {config.housingSettings.map(h => (
+                      <button 
+                        key={h.id} 
+                        onClick={() => updateData('vivienda', h.id)} 
+                        className={cn(
+                          "p-4 border transition-all text-[10px] font-bold uppercase tracking-widest group flex justify-center items-center relative overflow-hidden", 
+                          data.vivienda === h.id ? "border-primary bg-primary/10 text-white shadow-[0_0_15px_rgba(245,197,24,0.15)]" : "border-white/10 text-white/40 hover:border-primary/40 hover:bg-white/[0.02]"
+                        )}
+                      >
+                        {data.vivienda === h.id && <div className="absolute inset-0 bg-primary/5 blur-sm" />}
+                        <span className="relative z-10 transition-colors">{h.label}</span>
+                      </button>
+                    ))}
                   </div>
-                  {/* Antigüedad */}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                  {/* Ascensor - solo relevante si es un piso */} 
+                  {data.vivienda === 'piso' && (
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-primary block">¿Dispone de ascensor en la finca?</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => updateData('hasElevator', true)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === true ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>SÍ</button>
+                        <button onClick={() => updateData('hasElevator', false)} className={cn("p-4 border transition-all text-xs font-bold uppercase", data.hasElevator === false ? "border-primary bg-primary/10 text-white" : "border-white/10 text-white/40 hover:text-white")}>NO</button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Antigüedad - relevante para todas las reformas ya que condiciona el estado de las instalaciones */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-primary block">Año de construcción aprox.</label>
                     <div className="grid grid-cols-1 gap-2">
@@ -512,53 +664,129 @@ const Calculator = () => {
               </div>
             )}
 
-            {step === 5 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-2 scrollbar-hide">
-                {config.extras.filter(e => (e.project_types || []).some(t => String(t) === String(data.tipo))).map(extra => {
-                  const isSelected = data.selectedExtras.includes(extra.id);
-                  return (
-                    <div
-                      key={extra.id}
-                      onClick={() => toggleExtra(extra.id)}
-                      className={cn(
-                        "p-4 border cursor-pointer flex items-center gap-4 transition-all pr-6",
-                        isSelected ? "border-primary bg-primary/[0.03]" : "border-white/5 bg-white/[0.01] hover:border-white/10"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-6 h-6 shrink-0 border flex items-center justify-center transition-all",
-                        isSelected ? "bg-primary border-primary text-dark" : "border-white/20 text-transparent"
-                      )}>
-                        <Check className="w-4 h-4 stroke-[4px]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-[10px] font-black uppercase tracking-tight truncate transition-colors", isSelected ? "text-white" : "text-gray-400 group-hover:text-white")}>{extra.name}</p>
-                        <p className="text-[9px] text-primary font-bold tracking-widest mt-0.5">
-                          {(() => {
-                            let p = 0;
-                            if (data.calidad === 'basica') p = extra.price_basic || extra.price;
-                            else if (data.calidad === 'alta') p = extra.price_high || extra.price * 2;
-                            else p = extra.price_medium || extra.price * 1.5;
-
-                            if (extra.price_type === 'm2') p *= data.m2;
-                            return `+${Math.round(p).toLocaleString()}€`;
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {step === 5 && (() => {
+              const availableExtras = config.extras.filter(e => (e.project_types || []).some(t => String(t) === String(data.tipo)));
+              const extrasSubtotal = data.selectedExtras.reduce((acc, id) => {
+                const extra = config.extras.find(e => e.id === id);
+                if (!extra) return acc;
+                let p = Number(extra.price || 0);
+                if (extra.is_quality_dependent !== false) {
+                  if (data.calidad === 'basica') p = extra.price_basic || p;
+                  else if (data.calidad === 'alta') p = extra.price_high || p * 2;
+                  else p = extra.price_medium || p * 1.5;
+                }
+                if (extra.price_type === 'm2') p *= Math.max(Number(data.m2), 5);
+                return acc + Math.round(p);
+              }, 0);
+              
+              if (availableExtras.length === 0) return (
+                <div className="flex flex-col items-center justify-center py-16 gap-4 opacity-40">
+                  <div className="w-12 h-12 border border-white/10 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-white/30" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 text-center">
+                    No hay extras configurados<br/>para este tipo de obra
+                  </p>
+                  <p className="text-[9px] text-white/20 text-center">Puedes continuar al siguiente paso</p>
+                </div>
+              );
+              
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-2 scrollbar-hide">
+                    {availableExtras.map(extra => {
+                      const isSelected = data.selectedExtras.includes(extra.id);
+                      return (
+                        <div
+                          key={extra.id}
+                          onClick={() => toggleExtra(extra.id)}
+                          className={cn(
+                            "p-4 border cursor-pointer flex items-center gap-4 transition-all pr-6",
+                            isSelected ? "border-primary bg-primary/[0.03]" : "border-white/5 bg-white/[0.01] hover:border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-6 h-6 shrink-0 border flex items-center justify-center transition-all",
+                            isSelected ? "bg-primary border-primary text-dark" : "border-white/20 text-transparent"
+                          )}>
+                            <Check className="w-4 h-4 stroke-[4px]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={cn("text-[10px] font-black uppercase tracking-tight truncate transition-colors", isSelected ? "text-white" : "text-gray-400 group-hover:text-white")}>{extra.name}</p>
+                            <p className="text-[9px] text-primary font-bold tracking-widest mt-0.5">
+                              {(() => {
+                                let p = Number(extra.price || 0);
+                                if (extra.is_quality_dependent !== false) {
+                                   if (data.calidad === 'basica') p = extra.price_basic || p;
+                                   else if (data.calidad === 'alta') p = extra.price_high || p * 2;
+                                   else p = extra.price_medium || p * 1.5;
+                                }
+                                if (extra.price_type === 'm2') p *= Math.max(Number(data.m2), 5);
+                                return `+${Math.round(p).toLocaleString()}€`;
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Subtotal de Extras en tiempo real */}
+                  <div className={cn(
+                    "flex items-center justify-between p-4 border transition-all",
+                    extrasSubtotal > 0 ? "border-primary/20 bg-primary/[0.03]" : "border-white/5 bg-white/[0.01]"
+                  )}>
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Extras seleccionados:</span>
+                    <span className={cn("text-sm font-black italic transition-all", extrasSubtotal > 0 ? "text-primary" : "text-white/10")}>
+                      {extrasSubtotal > 0 ? `+${extrasSubtotal.toLocaleString()}€` : '—'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {step === 6 && (
               <div className="space-y-4 max-w-lg mx-auto py-1 animate-in fade-in duration-700">
-                <input type="text" value={data.name} onChange={e => updateData('name', e.target.value)} placeholder="NOMBRE COMPLETO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all uppercase font-bold text-white/80" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="tel" value={data.phone} onChange={e => updateData('phone', e.target.value)} placeholder="TELÉFONO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
-                  <input type="email" value={data.email} onChange={e => updateData('email', e.target.value)} placeholder="CORREO" className="w-full bg-white/[0.03] border border-white/10 p-5 pl-8 text-sm outline-none focus:border-primary/40 transition-all font-bold text-white/80" />
+                {/* Resumen de lo elegido para reforzar la decisión */}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {[
+                    config.projectTypes.find(p => p.id === data.tipo)?.name,
+                    data.m2 ? `${data.m2} m²` : null,
+                    config.qualitySettings.find(q => q.id === data.calidad)?.label,
+                    config.housingSettings.find(h => h.id === data.vivienda)?.label,
+                  ].filter(Boolean).map((tag, i) => (
+                    <span key={i} className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest bg-primary/10 border border-primary/20 text-primary">{tag}</span>
+                  ))}
                 </div>
-                <div className="p-6 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
+                <div className="space-y-1">
+                  <input
+                    type="text" value={data.name}
+                    onChange={e => { updateData('name', e.target.value); setFormErrors(p => ({...p, name: ''})); }}
+                    placeholder="NOMBRE COMPLETO"
+                    className={cn("w-full bg-white/[0.03] border p-5 pl-8 text-sm outline-none transition-all uppercase font-bold text-white/80", formErrors.name ? "border-red-500/60 focus:border-red-500" : "border-white/10 focus:border-primary/40")}
+                  />
+                  {formErrors.name && <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest pl-2">{formErrors.name}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <input
+                      type="tel" value={data.phone}
+                      onChange={e => { updateData('phone', e.target.value); setFormErrors(p => ({...p, phone: ''})); }}
+                      placeholder="TELÉFONO"
+                      className={cn("w-full bg-white/[0.03] border p-5 pl-8 text-sm outline-none transition-all font-bold text-white/80", formErrors.phone ? "border-red-500/60 focus:border-red-500" : "border-white/10 focus:border-primary/40")}
+                    />
+                    {formErrors.phone && <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest pl-2">{formErrors.phone}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <input
+                      type="email" value={data.email}
+                      onChange={e => { updateData('email', e.target.value); setFormErrors(p => ({...p, email: ''})); }}
+                      placeholder="CORREO"
+                      className={cn("w-full bg-white/[0.03] border p-5 pl-8 text-sm outline-none transition-all font-bold text-white/80", formErrors.email ? "border-red-500/60 focus:border-red-500" : "border-white/10 focus:border-primary/40")}
+                    />
+                    {formErrors.email && <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest pl-2">{formErrors.email}</p>}
+                  </div>
+                </div>
+                <div className="p-5 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
                   <ShieldCheck className="w-5 h-5 text-primary/60 shrink-0" />
                   <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · Conscugar Sagunto</p>
                 </div>
@@ -583,15 +811,49 @@ const Calculator = () => {
                   </div>
                 </div>
 
-                <div className="bg-black/60 p-8 sm:p-12 text-center border border-white/[0.1] relative group shadow-2xl">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-primary group-hover:w-64 transition-all duration-1000" />
-                  <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.6em] mb-4">Valoración Estimada · IVA INCLUIDO</p>
-                  <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.2)]">
-                    {budget.total.toLocaleString()}€
-                  </h2>
-                  <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-12 mt-8 py-6 border-t border-white/10">
-                    <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">PEM + Tasas Netas: <span className="text-white ml-2">{(budget.breakdown.pem + budget.breakdown.icio + budget.breakdown.contingency).toLocaleString()}€</span></div>
-                    <div className="text-[11px] text-white/60 font-black uppercase tracking-widest">IVA (21%): <span className="text-white ml-2">{budget.breakdown.iva.toLocaleString()}€</span></div>
+                <div className="space-y-3">
+                  {/* Precio principal con animación */}
+                  <div className="bg-black/60 p-8 sm:p-12 text-center border border-white/[0.1] relative group shadow-2xl overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-primary group-hover:w-64 transition-all duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent pointer-events-none" />
+                    <p className="text-[10px] text-white/50 font-black uppercase tracking-[0.6em] mb-4">Valoración Estimada · IVA INCLUIDO</p>
+                    <motion.h2
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                      className="text-5xl sm:text-7xl lg:text-8xl font-black text-primary italic leading-none tracking-tighter drop-shadow-[0_0_40px_rgba(245,197,24,0.3)]"
+                    >
+                      {animatedTotal.toLocaleString()}€
+                    </motion.h2>
+                    <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-4">
+                      Rango estimado: {budget.min.toLocaleString()}€ — {budget.max.toLocaleString()}€
+                    </p>
+                  </div>
+
+                  {/* Desglose detallado de partidas */}
+                  <div className="border border-white/5 bg-white/[0.01] divide-y divide-white/5">
+                    {[
+                      { label: 'Ejecución Material Base', value: budget.breakdown.baseMaterial, sub: 'Materiales y acabados según calidad' },
+                      { label: 'Mano de Obra', value: budget.breakdown.labor, sub: 'Equipo técnico y operarios' },
+                      ...(budget.breakdown.extras > 0 ? [{ label: 'Servicios Adicionales', value: budget.breakdown.extras, sub: 'Extras seleccionados' }] : []),
+                      { label: 'Licencias, ICIO y Tasas', value: budget.breakdown.icio, sub: '~4% del PEM' },
+                      { label: 'Fondo de Contingencias', value: budget.breakdown.contingency, sub: '~5% del PEM' },
+                      { label: `IVA (${budget.breakdown.ivaPercent}%)`, value: budget.breakdown.iva, sub: 'Impuesto sobre el valor añadido' },
+                    ].map((item, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + idx * 0.08, duration: 0.4 }}
+                        className="flex items-center justify-between px-5 py-3"
+                      >
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-tight text-white/60">{item.label}</p>
+                          <p className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{item.sub}</p>
+                        </div>
+                        <span className="text-[11px] font-black text-white/80 tabular-nums">{item.value.toLocaleString()}€</span>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
 
@@ -618,8 +880,21 @@ const Calculator = () => {
                       >
                         SOLICITAR VISITA TÉCNICA GRATUITA
                       </Button>
-                      <Button variant="outline" className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] border-white/20 text-white hover:border-primary hover:text-primary transition-all bg-white/[0.02]" onClick={generatePDF}>
-                        <Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR VALORACIÓN PDF
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] transition-all bg-white/[0.02]",
+                          pdfDownloaded
+                            ? "border-primary/50 text-primary shadow-[0_0_20px_rgba(245,197,24,0.15)]"
+                            : "border-white/20 text-white hover:border-primary hover:text-primary"
+                        )}
+                        onClick={generatePDF}
+                      >
+                        {pdfDownloaded ? (
+                          <><CheckCircle2 className="w-5 h-5 mr-3" /> PDF DESCARGADO</>
+                        ) : (
+                          <><Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR VALORACIÓN PDF</>
+                        )}
                       </Button>
                     </div>
                   ) : (
@@ -637,16 +912,21 @@ const Calculator = () => {
         </AnimatePresence>
 
         {/* Footer Nav */}
-        <div className="mt-12 pt-8 border-t border-white/[0.03] flex items-center justify-between">
+        <div className="mt-6 pt-6 border-t border-white/[0.03] flex items-center justify-between">
           <button onClick={prevStep} className={cn("text-[10px] font-black uppercase tracking-widest transition-all p-4", step === 1 || step === 7 ? "invisible" : "text-white/10 hover:text-white/40")}>ATRÁS</button>
           {step < 6 ? (
             <Button onClick={nextStep} disabled={
               (step === 1 && !data.tipo) ||
               (step === 2 && Number(data.m2) < 1) ||
-              (step === 3 && (data.hasElevator === null || !data.propertyAge))
+              (step === 3 && (() => {
+                const isBano = data.tipo?.includes('bano') || data.tipo?.includes('baño');
+                const isCocina = data.tipo?.includes('cocina');
+                const needsAge = !isBano && !isCocina;
+                return data.hasElevator === null || !data.vivienda || (needsAge && !data.propertyAge);
+              })())
             } className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">CONTINUAR</Button>
           ) : step === 6 ? (
-            <Button onClick={nextStep} disabled={!data.name || !data.email || !data.phone} className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">{submitting ? 'VALIDANDO...' : 'CALCULAR'}</Button>
+            <Button onClick={nextStep} disabled={!isContactFormatValid()} className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">{submitting ? 'VALIDANDO...' : 'CALCULAR'}</Button>
           ) : (
             <button onClick={() => {
               playHapticTick();
@@ -655,6 +935,7 @@ const Calculator = () => {
                 tipo: config.projectTypes[0]?.id || '', m2: 0, hasElevator: null, propertyAge: '', calidad: '', vivienda: '',
                 selectedExtras: [], name: '', email: '', phone: ''
               });
+              setFormErrors({});
               setVisitRequested(false);
               localStorage.removeItem('ccg_step');
               localStorage.removeItem('ccg_data');

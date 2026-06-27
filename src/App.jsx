@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import { AvisoLegal, Privacidad, Cookies } from './pages/legal/LegalPages';
+import WebGLBackground from './components/ui/WebGLBackground';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -46,6 +47,7 @@ function App() {
   return (
     <AuthProvider>
       <ScrollToTop />
+      <WebGLBackground />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />

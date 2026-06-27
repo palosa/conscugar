@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import BackgroundOrbs from '../ui/BackgroundOrbs';
 import Calculator from '../Calculator/Calculator';
+import WebGLHeroObject from '../ui/WebGLHeroObject';
 import heroImg from '../../assets/hero.png';
 
 export const Hero = () => {
@@ -18,11 +19,17 @@ export const Hero = () => {
   });
 
   const y1 = useTransform(smoothProgress, [0, 1], [0, 150]);
+  const y2 = useTransform(smoothProgress, [0, 1], [0, 60]); // 3D object speed
+  const yText = useTransform(smoothProgress, [0, 1], [0, -30]); // Text speed
 
   return (
-    <section ref={ref} className="relative min-h-[90vh] flex items-center pt-32 sm:pt-40 pb-20 overflow-hidden bg-dark">
-      {/* Elementos Visuales de Fondo */}
-      <div className="absolute inset-0 z-0">
+    <section
+      ref={ref}
+      aria-labelledby="hero-heading"
+      className="relative min-h-[90vh] flex items-center pt-32 sm:pt-40 pb-20 overflow-hidden bg-dark"
+    >
+      {/* Elementos Visuales de Fondo - decorativos */}
+      <div className="absolute inset-0 z-0" aria-hidden="true">
         <BackgroundOrbs />
         <motion.div 
           style={{ 
@@ -39,8 +46,18 @@ export const Hero = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-20 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-40 items-center">
         
         {/* 🔥 TÍTULO - Ajustado para evitar solapamiento */}
-        <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left pt-10 lg:pt-0">
+        <div className="space-y-8 flex flex-col items-center lg:items-start text-center lg:text-left pt-10 lg:pt-0 relative">
+          
+          {/* WebGL 3D Object Background Layer */}
+          <motion.div 
+            style={{ y: y2 }}
+            className="absolute inset-0 -z-10 flex items-center justify-center opacity-[0.48] pointer-events-none transform -translate-y-12 scale-[1.3] lg:scale-[1.5]"
+          >
+             <WebGLHeroObject />
+          </motion.div>
+
           <motion.div
+            style={{ y: yText }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
@@ -49,7 +66,10 @@ export const Hero = () => {
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.3em]">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> Sagunto · Puerto · Alrededores
             </div>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter uppercase italic leading-[1.1] sm:leading-[1] lg:leading-[0.95]">
+            <h1
+              id="hero-heading"
+              className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter uppercase italic leading-[1.1] sm:leading-[1] lg:leading-[0.95]"
+            >
               <span className="text-white">Construcciones</span> <br />
               <span className="text-white/20">Y</span>
               <span className="text-primary italic"> Reformas</span><br />
