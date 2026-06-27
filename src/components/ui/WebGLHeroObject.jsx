@@ -52,7 +52,15 @@ const WebGLHeroObject = () => {
       [4, 10], [5, 10], [6, 10], [7, 10]
     ];
 
-    // Ángulos de rotación
+    // Generar nube de dispersión inicial para la animación de auto-ensamblaje
+    const scatterOffsets = nodes.map(() => ({
+      x: (Math.random() - 0.5) * 4,
+      y: (Math.random() - 0.5) * 4,
+      z: (Math.random() - 0.5) * 4
+    }));
+
+    // Variables de control de la animación
+    let progress = 0; // Ensamblaje: 0 a 1
     let angleX = 0.3; // Rotación inicial
     let angleY = 0.5;
     let angleZ = 0.1;
@@ -97,6 +105,11 @@ const WebGLHeroObject = () => {
     const tick = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // Ensamblaje progresivo (lerp lento al cargar la sección)
+      if (progress < 1) {
+        progress += 0.015; // Velocidad de formación
+      }
+
       // Suavizar transición de rotación (Interpolación / LERP)
       currentRot.x += (targetRot.x - currentRot.x) * 0.08;
       currentRot.y += (targetRot.y - currentRot.y) * 0.08;
@@ -118,14 +131,20 @@ const WebGLHeroObject = () => {
       const centerX = width / 2;
       const centerY = height / 2 + 20;
 
-      nodes.forEach((node) => {
+      nodes.forEach((node, i) => {
+        const offset = scatterOffsets[i];
+        // Interpola entre posición dispersa y posición final ensamblada
+        const x = node.x * progress + offset.x * (1 - progress);
+        const y = node.y * progress + offset.y * (1 - progress);
+        const z = node.z * progress + offset.z * (1 - progress);
+
         // Rotación en eje Y
-        let x1 = node.x * cosY - node.z * sinY;
-        let z1 = node.x * sinY + node.z * cosY;
+        let x1 = x * cosY - z * sinY;
+        let z1 = x * sinY + z * cosY;
 
         // Rotación en eje X
-        let y2 = node.y * cosX - z1 * sinX;
-        let z2 = node.y * sinX + z1 * cosX;
+        let y2 = y * cosX - z1 * sinX;
+        let z2 = y * sinX + z1 * cosX;
 
         // Rotación en eje Z (inclinación)
         let x3 = x1 * cosZ - y2 * sinZ;
@@ -142,9 +161,11 @@ const WebGLHeroObject = () => {
         });
       });
 
-      // Dibujar vigas secundarias / Líneas tenues de cuadrícula interior
-      ctx.lineWidth = 1;
-      edges.forEach(([u, v]) => {
+      // Dibujar vigas secundarias / Líneas tenues de cuadrícula interior (Se forman progresivamente)
+      const edgeDrawLimit = Math.floor(edges.length * progress);
+      edges.forEach(([u, v], idx) => {
+        if (idx > edgeDrawLimit) return;
+
         // Determinar si es una viga decorativa interna o pilar principal
         const isInternal = u === 10 || v === 10;
         ctx.lineWidth = isInternal ? 1 : 1.6; // Líneas más gruesas para la estructura principal
@@ -159,7 +180,9 @@ const WebGLHeroObject = () => {
       });
 
       // Dibujar nodos (Puntos de conexión / Vértices)
+      const nodeDrawLimit = Math.floor(nodes.length * progress);
       nodes.forEach((node, i) => {
+        if (i > nodeDrawLimit) return;
         const proj = projected[i];
         const isCenterNode = i === 10;
 

@@ -46,14 +46,23 @@ export const calculateBudget = (data, config = {}) => {
   const scaleFactor = Math.max(0.65, Math.pow(pivotM2 / safeM2, 0.15)); // Freno matemático: descuento máximo 35%
   const scaledPricePerM2 = baseReferencePrice * scaleFactor;
 
+  // Helper para leer parámetros dinámicos de global_settings
+  const getGlobalSetting = (key, fallback) => {
+    const s = globalSettings.find(item => item.key === key);
+    return s ? Number(s.value) : fallback;
+  };
+
   // 3. Multiplicadores Físicos y de Logística
   const qSetting = qualitySettings.find(s => s.id === calidad) || { multiplier: 1.0 };
   const hSetting = housingSettings.find(s => s.id === vivienda) || { multiplier: 1.0 };
   
   // Riesgos por Antigüedad
   let ageMultiplier = 1.0;
-  if (propertyAge === 'pre_1970') ageMultiplier = 1.20; // +20% costes ocultos de demolición técnica
-  else if (propertyAge === '1970_2000') ageMultiplier = 1.08; // +8% actualización de instalaciones
+  if (propertyAge === 'pre_1970') {
+    ageMultiplier = 1.0 + getGlobalSetting('age_pre_1970_penalty', 0.20); // +20% por defecto
+  } else if (propertyAge === '1970_2000') {
+    ageMultiplier = 1.0 + getGlobalSetting('age_1970_2000_penalty', 0.08); // +8% por defecto
+  }
   
   // Decidir método de cálculo base: Fijo vs Proporcional a m2
   let baseTotal = 0;
@@ -95,7 +104,7 @@ export const calculateBudget = (data, config = {}) => {
   // Si no hay ascensor, aplicamos una penalización de logística sobre el coste de mano de obra.
   let laborLogisticMultiplier = 1.0;
   if (vivienda === 'piso' && hasElevator === false) {
-    laborLogisticMultiplier = 1.15; // +15% por acarreo manual de escombros y materiales en pisos sin ascensor
+    laborLogisticMultiplier = 1.0 + getGlobalSetting('elevator_penalty', 0.15); // +15% por defecto
   }
 
   const laborTotal = baseTotal * 0.40 * laborLogisticMultiplier;

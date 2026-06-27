@@ -290,10 +290,19 @@ const Calculator = () => {
     doc.setFillColor(10, 10, 10);
     doc.rect(0, 0, 210, 40, 'F');
 
-    doc.setTextColor(245, 197, 24); // Primary Gold
     doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
-    doc.text("CONSCUGAR", 20, 25);
+    
+    // "CONS" en Blanco
+    doc.setTextColor(255, 255, 255);
+    doc.text("CONS", 20, 25);
+
+    // Calcular el ancho de "CONS" para posicionar "CUGAR" de forma contigua
+    const consWidth = doc.getTextWidth("CONS");
+
+    // "CUGAR" en Dorado
+    doc.setTextColor(245, 197, 24); // Primary Gold
+    doc.text("CUGAR", 20 + consWidth, 25);
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);

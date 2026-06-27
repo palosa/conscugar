@@ -21,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '../utils/supabase';
 import { Button } from '../components/ui/Button';
 import { cn } from '../utils/cn';
-
+import { calculateBudget } from '../constants/pricing';
 const ICON_MAP = {
   Home, ShowerHead, CookingPot, Construction, Building2, Wrench,
   Zap, CheckCircle2, ShieldCheck, Hammer, Percent
@@ -129,6 +129,17 @@ const Admin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [savingId, setSavingId] = useState(null);
+  
+  // Simulator State
+  const [simData, setSimData] = useState({
+    tipo: 'reforma_integral',
+    m2: 80,
+    calidad: 'media',
+    vivienda: 'piso',
+    hasElevator: true,
+    propertyAge: 'post_2000',
+    selectedExtras: []
+  });
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -152,7 +163,21 @@ const Admin = () => {
       if (projectsRes.data) setProjectTypes(projectsRes.data);
       if (qualityRes.data) setQualitySettings(qualityRes.data);
       if (housingRes.data) setHousingSettings(housingRes.data);
-      if (globalRes.data) setGlobalSettings(globalRes.data);
+      if (globalRes.data) {
+        const loadedKeys = globalRes.data.map(s => s.key);
+        const defaults = [
+          { key: 'elevator_penalty', value: '0.15', description: 'Recargo por piso sin ascensor (+15% mano de obra)' },
+          { key: 'age_pre_1970_penalty', value: '0.20', description: 'Recargo para viviendas anteriores a 1970 (+20%)' },
+          { key: 'age_1970_2000_penalty', value: '0.08', description: 'Recargo para viviendas construidas entre 1970 y 2000 (+8%)' }
+        ];
+        const mergedSettings = [...globalRes.data];
+        defaults.forEach(def => {
+          if (!loadedKeys.includes(def.key)) {
+            mergedSettings.push(def);
+          }
+        });
+        setGlobalSettings(mergedSettings);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -162,8 +187,37 @@ const Admin = () => {
 
   const handleUpdate = async (table, id, field, value) => {
     setSavingId(`${table}-${id}-${field}`);
-    const { error } = await supabase.from(table).update({ [field]: value }).eq('id', id);
-    if (!error) { await fetchAllData(); setTimeout(() => setSavingId(null), 1000); }
+    
+    // 1. Actualización Optimista (Actualiza el estado local al instante para evitar lag)
+    if (table === 'leads') {
+      setLeads(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    } else if (table === 'extras') {
+      setExtras(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    } else if (table === 'pricing_config') {
+      setPricing(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    } else if (table === 'global_settings') {
+      setGlobalSettings(prev => prev.map(item => item.key === id ? { ...item, [field]: value } : item));
+    }
+
+    // 2. Sincronización con la Base de Datos
+    let error;
+    if (table === 'global_settings') {
+      const { error: err } = await supabase.from(table).upsert({ key: id, [field]: value });
+      error = err;
+    } else {
+      const { error: err } = await supabase.from(table).update({ [field]: value }).eq('id', id);
+      error = err;
+    }
+
+    if (error) {
+      console.error(`Error updating ${table}.${field}:`, error);
+      alert(`Error al guardar cambios: ${error.message}`);
+      // Si falla, revertimos trayendo el estado real de la base de datos
+      await fetchAllData();
+      setSavingId(null);
+    } else {
+      setTimeout(() => setSavingId(null), 800);
+    }
   };
 
   const handleDelete = async (table, id) => {
@@ -220,9 +274,17 @@ const Admin = () => {
 
   const monthlyData = getMonthlyData(leads);
   const distData = getProjectDistribution(leads);
-  const totalVolume = leads.reduce((a, l) => a + (l.estimated_total || 0), 0);
-  const avgTicket = leads.length > 0 ? Math.round(totalVolume / leads.length) : 0;
+  const activeLeads = leads.filter(l => !l.status || l.status === 'nuevo' || l.status === 'contactado');
+  const wonLeads = leads.filter(l => l.status === 'cerrado');
+  const lostLeads = leads.filter(l => l.status === 'perdido');
+
+  const totalVolume = activeLeads.reduce((a, l) => a + (l.estimated_total || 0), 0); // Pipeline activo
+  const wonVolume = wonLeads.reduce((a, l) => a + (l.estimated_total || 0), 0); // Ventas cerradas reales
+  const avgTicket = activeLeads.length > 0 ? Math.round(totalVolume / activeLeads.length) : 0;
   const thisMonth = leads.filter(l => new Date(l.created_at).getMonth() === new Date().getMonth()).length;
+
+  const totalResolved = wonLeads.length + lostLeads.length;
+  const conversionRate = totalResolved > 0 ? Math.round((wonLeads.length / totalResolved) * 100) : 0;
 
   const TABS = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -310,10 +372,10 @@ const Admin = () => {
               {/* KPI Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Leads Totales', value: leads.length, icon: Users, suffix: '', sub: `${thisMonth} este mes`, up: thisMonth > 0 },
-                  { label: 'Volumen Potencial', value: totalVolume.toLocaleString(), icon: Euro, suffix: '€', sub: 'Presupuesto acumulado', up: true },
-                  { label: 'Ticket Medio', value: avgTicket.toLocaleString(), icon: TrendingUp, suffix: '€', sub: 'Por valoración', up: true },
-                  { label: 'Tipos de Obra', value: projectTypes.length, icon: BarChart3, suffix: '', sub: 'Activos en calculadora', up: true },
+                  { label: 'Leads Activos', value: activeLeads.length, icon: Users, suffix: '', sub: `${leads.length} leads totales`, up: true },
+                  { label: 'Pipeline Activo', value: totalVolume.toLocaleString(), icon: Euro, suffix: '€', sub: 'En negociación', up: true },
+                  { label: 'Ventas Cerradas', value: wonVolume.toLocaleString(), icon: TrendingUp, suffix: '€', sub: `${wonLeads.length} obras ganadas`, up: wonVolume > 0 },
+                  { label: 'Tasa de Conversión', value: conversionRate.toString(), icon: BarChart3, suffix: '%', sub: 'Éxito en cierres', up: conversionRate > 50 },
                 ].map((kpi, i) => (
                   <div key={i} className="bg-white/[0.03] border border-white/5 p-6 relative overflow-hidden group hover:border-primary/20 transition-all">
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary/30" />
@@ -398,28 +460,155 @@ const Admin = () => {
                 </div>
               </div>
 
-              {/* Recent Leads mini table */}
-              <div className="bg-white/[0.02] border border-white/5 p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-primary">Leads Recientes</p>
-                  <button onClick={() => setActiveTab('leads')} className="text-[9px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-widest flex items-center gap-1">Ver todos <ChevronRight className="w-3 h-3" /></button>
-                </div>
-                <div className="space-y-2">
-                  {leads.slice(0, 5).map(l => (
-                    <div key={l.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black">{l.name?.[0]}</div>
-                        <div>
-                          <p className="text-xs font-black text-white uppercase">{l.name}</p>
-                          <p className="text-[9px] text-white/30">{l.project_type?.replace(/_/g,' ')} · {l.m2}m²</p>
+              {/* Split Row: Leads Recientes & Simulador Técnico */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Recent Leads mini table */}
+                <div className="bg-white/[0.02] border border-white/5 p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Leads Recientes</p>
+                    <button onClick={() => setActiveTab('leads')} className="text-[9px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-widest flex items-center gap-1">Ver todos <ChevronRight className="w-3 h-3" /></button>
+                  </div>
+                  <div className="space-y-2">
+                    {leads.slice(0, 5).map(l => (
+                      <div key={l.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black">{l.name?.[0]}</div>
+                          <div>
+                            <p className="text-xs font-black text-white uppercase">{l.name}</p>
+                            <p className="text-[9px] text-white/30">{l.project_type?.replace(/_/g,' ')} · {l.m2}m²</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-primary italic">{l.estimated_total?.toLocaleString()}€</p>
+                          <p className="text-[9px] text-white/20">{new Date(l.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-black text-primary italic">{l.estimated_total?.toLocaleString()}€</p>
-                        <p className="text-[9px] text-white/20">{new Date(l.created_at).toLocaleDateString()}</p>
-                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Simulador Técnico de Presupuestos */}
+                <div className="bg-white/[0.02] border border-white/5 p-6 space-y-6">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Prueba de Configuración</p>
+                    <h3 className="text-sm font-black uppercase italic text-white/60">Simulador de Tarifas</h3>
+                  </div>
+                  
+                  {/* Formulario rápido */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Obra</label>
+                      <select 
+                        value={simData.tipo}
+                        onChange={e => setSimData(prev => ({ ...prev, tipo: e.target.value }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                      >
+                        {projectTypes.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Superficie (m²)</label>
+                      <input 
+                        type="number"
+                        value={simData.m2}
+                        onChange={e => setSimData(prev => ({ ...prev, m2: Math.max(1, Number(e.target.value) || 0) }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Calidad</label>
+                      <select 
+                        value={simData.calidad}
+                        onChange={e => setSimData(prev => ({ ...prev, calidad: e.target.value }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                      >
+                        {qualitySettings.map(q => (
+                          <option key={q.id} value={q.id}>{q.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Vivienda</label>
+                      <select 
+                        value={simData.vivienda}
+                        onChange={e => setSimData(prev => ({ ...prev, vivienda: e.target.value }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                      >
+                        {housingSettings.map(h => (
+                          <option key={h.id} value={h.id}>{h.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Ascensor</label>
+                      <select 
+                        value={simData.hasElevator === true ? 'true' : 'false'}
+                        disabled={simData.vivienda !== 'piso'}
+                        onChange={e => setSimData(prev => ({ ...prev, hasElevator: e.target.value === 'true' }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary disabled:opacity-30"
+                      >
+                        <option value="true">Sí (Con Ascensor)</option>
+                        <option value="false">No (Sin Ascensor)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-black text-white/20 uppercase">Antigüedad</label>
+                      <select 
+                        value={simData.propertyAge}
+                        onChange={e => setSimData(prev => ({ ...prev, propertyAge: e.target.value }))}
+                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                      >
+                        <option value="post_2000">Posterior a 2000</option>
+                        <option value="1970_2000">Entre 1970 y 2000</option>
+                        <option value="pre_1970">Anterior a 1970</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Resultados simulados */}
+                  {(() => {
+                    const configData = { projectTypes, pricingRanges: pricing, extras, qualitySettings, housingSettings, globalSettings };
+                    const budget = calculateBudget(simData, configData);
+                    if (!budget) return <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest text-center py-4">Faltan datos de cálculo</p>;
+                    return (
+                      <div className="p-4 bg-black/40 border border-white/10 space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                          <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">Valoración con I.V.A. ({budget.breakdown.ivaPercent}%)</span>
+                          <span className="text-xl font-black italic text-primary">{budget.total.toLocaleString()} €</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[9px] font-bold text-white/60">
+                          <div className="flex justify-between">
+                            <span>P.E.M. Base:</span>
+                            <span className="text-white">{budget.breakdown.pem.toLocaleString()} €</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Mano de obra:</span>
+                            <span className="text-white">{budget.breakdown.labor.toLocaleString()} €</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Tasa / ICIO (4%):</span>
+                            <span className="text-white">{budget.breakdown.icio.toLocaleString()} €</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Contingencias (5%):</span>
+                            <span className="text-white">{budget.breakdown.contingency.toLocaleString()} €</span>
+                          </div>
+                          <div className="flex justify-between col-span-2 pt-2 border-t border-white/5">
+                            <span>Precio base proyectado:</span>
+                            <span className="text-primary italic font-black">{budget.breakdown.pricePerM2.toLocaleString()} €/m²</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -592,18 +781,29 @@ const Admin = () => {
                           <option value="false">No (Precio invariable)</option>
                         </select>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[['Básica', 'price_basic'], ['Media', 'price_medium'], ['Alta', 'price_high']].map(([label, field]) => (
-                          <div key={field} className="space-y-1">
-                            <label className="text-[8px] font-black text-white/10 uppercase">{label} (€)</label>
-                            <input
-                              type="number" value={e[field] || 0}
-                              onChange={v => handleUpdate('extras', e.id, field, Number(v.target.value))}
-                              className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      {e.is_quality_dependent === false ? (
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-white/30 uppercase">Precio Único/Base (€ {e.price_type === 'm2' ? 'por m²' : 'fijo'})</label>
+                          <input
+                            type="number" value={e.price || 0}
+                            onChange={v => handleUpdate('extras', e.id, 'price', Number(v.target.value))}
+                            className="w-full bg-dark/40 border border-white/10 p-3 text-xs font-bold text-white outline-none focus:border-primary/40"
+                          />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                          {[['Básica', 'price_basic'], ['Media', 'price_medium'], ['Alta', 'price_high']].map(([label, field]) => (
+                            <div key={field} className="space-y-1">
+                              <label className="text-[8px] font-black text-white/20 uppercase">{label} (€ {e.price_type === 'm2' ? '/m²' : 'fijo'})</label>
+                              <input
+                                type="number" value={e[field] || 0}
+                                onChange={v => handleUpdate('extras', e.id, field, Number(v.target.value))}
+                                className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <button onClick={() => handleDelete('extras', e.id)} className="text-white/5 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1 shrink-0">
                       <Trash2 className="w-4 h-4" />

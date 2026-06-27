@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
+import WebGLToolsObject from '../ui/WebGLToolsObject';
 
 const testimonials = [
   {
@@ -31,6 +32,7 @@ const Testimonials = () => {
   });
 
   const yBg = useTransform(scrollYProgress, [0, 1], [-80, 80]);
+  const yTool = useTransform(scrollYProgress, [0, 1], [-40, 40]);
 
   return (
     <section 
@@ -39,10 +41,18 @@ const Testimonials = () => {
       id="testimonios" 
       aria-labelledby="testimonials-heading"
     >
+      {/* 3D Builder Mallet (Left Side) */}
+      <motion.div 
+        style={{ y: yTool }}
+        className="absolute top-12 left-12 z-0 opacity-[0.45] pointer-events-none transform scale-[1.0] md:scale-[1.2] lg:scale-[1.4]"
+      >
+         <WebGLToolsObject />
+      </motion.div>
+
       {/* Parallax Background Layer */}
       <motion.div 
         style={{ y: yBg }}
-        className="absolute top-20 right-10 text-[14vw] font-black uppercase text-white/[0.035] pointer-events-none select-none tracking-widest italic leading-none"
+        className="absolute top-20 right-10 z-0 text-[14vw] font-black uppercase text-white/[0.035] pointer-events-none select-none tracking-widest italic leading-none"
       >
         RESEÑAS
       </motion.div>
