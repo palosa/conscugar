@@ -87,7 +87,7 @@ const Process = () => {
               
               {/* Connector for Desktop */}
               {idx < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-[1px] bg-white/5 z-0" />
+                <div className="hidden lg:block absolute top-1/2 -right-8 w-8 h-[1px] bg-white/5 z-0" />
               )}
             </motion.li>
           ))}

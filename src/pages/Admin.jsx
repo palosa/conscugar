@@ -5,7 +5,7 @@ import {
   Zap, ShieldCheck, Wrench, Construction, CookingPot, ShowerHead,
   Building2, RefreshCw, PlusCircle, Percent, FileText, TrendingUp,
   GripVertical, X, Menu, TableProperties, Layout, ArrowUpRight,
-  ArrowDownRight, BarChart3, Activity
+  ArrowDownRight, BarChart3, Activity, MessageSquare, Star
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -124,6 +124,7 @@ const Admin = () => {
   const [qualitySettings, setQualitySettings] = useState([]);
   const [housingSettings, setHousingSettings] = useState([]);
   const [globalSettings, setGlobalSettings] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
 
   // UI
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,7 +149,7 @@ const Admin = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [leadsRes, pricingRes, extrasRes, projectsRes, qualityRes, housingRes, globalRes] = await Promise.all([
+      const [leadsRes, pricingRes, extrasRes, projectsRes, qualityRes, housingRes, globalRes, testimonialsRes] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('pricing_config').select('*'),
         supabase.from('extras').select('*'),
@@ -156,6 +157,7 @@ const Admin = () => {
         supabase.from('quality_settings').select('*'),
         supabase.from('housing_settings').select('*'),
         supabase.from('global_settings').select('*'),
+        supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
       ]);
       if (leadsRes.data) setLeads(leadsRes.data);
       if (pricingRes.data) setPricing(pricingRes.data);
@@ -163,6 +165,7 @@ const Admin = () => {
       if (projectsRes.data) setProjectTypes(projectsRes.data);
       if (qualityRes.data) setQualitySettings(qualityRes.data);
       if (housingRes.data) setHousingSettings(housingRes.data);
+      if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
       if (globalRes.data) {
         const loadedKeys = globalRes.data.map(s => s.key);
         const defaults = [
@@ -197,6 +200,8 @@ const Admin = () => {
       setPricing(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
     } else if (table === 'global_settings') {
       setGlobalSettings(prev => prev.map(item => item.key === id ? { ...item, [field]: value } : item));
+    } else if (table === 'testimonials') {
+      setTestimonials(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
     }
 
     // 2. Sincronización con la Base de Datos
@@ -240,6 +245,28 @@ const Admin = () => {
     if (!name) return;
     await supabase.from('extras').insert([{ id: name.toLowerCase().replace(/\s+/g, '_'), name, price: 1000, category: 'General', project_types: projectTypes.map(p => p.id) }]);
     fetchAllData();
+  };
+
+  const handleAddTestimonial = async () => {
+    try {
+      const newTestimonial = {
+        name: 'Nuevo Cliente',
+        location: 'Sagunto',
+        text: 'Escribe aquí la opinión del cliente...',
+        rating: 5,
+        is_google: false,
+        approved: true
+      };
+      const { data, error } = await supabase
+        .from('testimonials')
+        .insert([newTestimonial])
+        .select();
+      if (data && data.length > 0) {
+        setTestimonials(prev => [data[0], ...prev]);
+      }
+    } catch (err) {
+      console.error("Error adding testimonial:", err);
+    }
   };
 
   const exportLeads = () => {
@@ -292,6 +319,7 @@ const Admin = () => {
     { id: 'projects', label: 'Proyectos', icon: Layout },
     { id: 'extras', label: 'Extras', icon: PlusCircle },
     { id: 'pricing', label: 'Precios', icon: TableProperties },
+    { id: 'testimonials', label: 'Testimonios', icon: MessageSquare },
     { id: 'settings', label: 'Ajustes Motor', icon: Settings },
   ];
 
@@ -864,6 +892,111 @@ const Admin = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {/* ═══════════════ TESTIMONIALS TAB ═══════════════ */}
+          {activeTab === 'testimonials' && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black uppercase text-primary tracking-widest border-l-2 border-primary pl-4">Comentarios y Reseñas</h3>
+                  <p className="text-[9px] text-white/40 mt-1">Gestiona los testimonios visibles en la página web pública y marca los que provienen de Google.</p>
+                </div>
+                <Button onClick={handleAddTestimonial} variant="primary" size="sm" className="text-[10px] font-black uppercase tracking-widest gap-2">
+                  <Plus className="w-4 h-4" /> Nuevo Testimonio
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {testimonials.map(t => (
+                  <div key={t.id} className="bg-white/5 border border-white/5 p-6 space-y-4 hover:border-primary/10 transition-all flex flex-col justify-between group relative">
+                    <button 
+                      onClick={() => handleDelete('testimonials', t.id)}
+                      className="absolute top-4 right-4 text-white/10 hover:text-red-500 transition-colors"
+                      title="Eliminar Testimonio"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[8px] font-black text-white/20 uppercase">Nombre</label>
+                        <input
+                          type="text"
+                          value={t.name}
+                          onChange={e => handleUpdate('testimonials', t.id, 'name', e.target.value)}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40 mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[8px] font-black text-white/20 uppercase">Ubicación</label>
+                        <input
+                          type="text"
+                          value={t.location}
+                          onChange={e => handleUpdate('testimonials', t.id, 'location', e.target.value)}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white/80 outline-none focus:border-primary/40 mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[8px] font-black text-white/20 uppercase">Opinión</label>
+                        <textarea
+                          rows="4"
+                          value={t.text}
+                          onChange={e => handleUpdate('testimonials', t.id, 'text', e.target.value)}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-medium text-white/70 outline-none focus:border-primary/40 mt-1 resize-none leading-relaxed"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[8px] font-black text-white/20 uppercase">Valoración</label>
+                          <select
+                            value={t.rating}
+                            onChange={e => handleUpdate('testimonials', t.id, 'rating', Number(e.target.value))}
+                            className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-black uppercase text-primary outline-none focus:border-primary/40 mt-1"
+                          >
+                            <option value="5">5 Estrellas</option>
+                            <option value="4">4 Estrellas</option>
+                            <option value="3">3 Estrellas</option>
+                            <option value="2">2 Estrellas</option>
+                            <option value="1">1 Estrella</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[8px] font-black text-white/20 uppercase">Origen</label>
+                          <select
+                            value={t.is_google ? "google" : "web"}
+                            onChange={e => handleUpdate('testimonials', t.id, 'is_google', e.target.value === "google")}
+                            className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-black uppercase text-white outline-none focus:border-primary/40 mt-1"
+                          >
+                            <option value="web">Web Directo</option>
+                            <option value="google">Reseña Google</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`approved-${t.id}`}
+                          checked={t.approved}
+                          onChange={e => handleUpdate('testimonials', t.id, 'approved', e.target.checked)}
+                          className="w-4 h-4 rounded border-white/10 bg-dark text-primary focus:ring-0 focus:ring-offset-0"
+                        />
+                        <label htmlFor={`approved-${t.id}`} className="text-[10px] font-black text-white/50 uppercase tracking-wider cursor-pointer">Aprobado (Visible)</label>
+                      </div>
+                      {savingId?.startsWith(`testimonials-${t.id}`) && (
+                        <span className="text-[8px] font-black uppercase text-primary/60 tracking-wider animate-pulse">Guardando...</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

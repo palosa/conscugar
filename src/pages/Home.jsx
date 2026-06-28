@@ -81,7 +81,7 @@ const Home = () => {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.4em]">© 2026 Conscugar Construcción</p>
+          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.4em]">© {new Date().getFullYear()} Conscugar Construcción</p>
           <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">Hecho con precisión en Sagunto</p>
         </div>
       </footer>

@@ -44,6 +44,21 @@ const projects = [
   },
   { 
     id: 3,
+    title: 'Cocina Minimalista Black & Wood', 
+    category: 'Interiorismo', 
+    location: 'Puerto de Sagunto (Zona Náutica)', 
+    year: '2024',
+    image: kitchenImg,
+    gallery: [kitchenImg, kitchenV2],
+    description: 'Cocina abierta al mar con elegancia del negro mate y calidez del roble ahumado artesanal.',
+    details: [
+      'Encimera de Dekton con veteado natural.',
+      'Electrodomésticos premium totalmente ocultos.',
+      'Suelo de madera resistente a la humedad.'
+    ]
+  },
+  { 
+    id: 4,
     title: 'Suite de Relax Spa', 
     category: 'Reforma de Baño', 
     location: 'Gilet (Sierra Calderona)', 

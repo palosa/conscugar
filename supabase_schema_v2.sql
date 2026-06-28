@@ -85,3 +85,36 @@ INSERT INTO global_settings (key, value, description) VALUES
 --   project_types TEXT[] DEFAULT '{}',
 --   created_at TIMESTAMPTZ DEFAULT now()
 -- );
+
+-- 4. Tabla de Testimonios (Preparada para Google Reviews)
+CREATE TABLE IF NOT EXISTS testimonials (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  location TEXT NOT NULL,
+  text TEXT NOT NULL,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5) DEFAULT 5,
+  is_google BOOLEAN DEFAULT false,
+  approved BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Datos semilla para testimonios iniciales
+INSERT INTO testimonials (name, location, text, rating, is_google, approved) VALUES
+('Carlos Ruiz', 'Puerto de Sagunto', 'La precisión del presupuesto inicial fue asombrosa. No hubo sorpresas de última hora y el acabado es de revista. Profesionales de verdad.', 5, false, true),
+('Elena García', 'Gilet', 'Reformamos nuestra casa de montaña con ellos. El equipo técnico entiende perfectamente el entorno y los materiales. Superaron expectativas.', 5, false, true),
+('Marc Sanchis', 'Centro Histórico, Sagunto', 'Gestionar una rehabilitación en el centro de Sagunto daba miedo por los permisos, pero ellos se encargaron de todo. Una joya.', 5, false, true);
+
+-- 5. Seguridad y Políticas de Acceso (RLS) para Testimonios
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+
+-- Permitir que cualquier visitante (público / anon) lea los testimonios aprobados
+CREATE POLICY "Permitir lectura pública de testimonios aprobados" 
+ON testimonials FOR SELECT 
+USING (approved = true);
+
+-- Permitir control total (insertar, actualizar, borrar) solo a usuarios autenticados (Administradores)
+CREATE POLICY "Permitir control total de testimonios a administradores" 
+ON testimonials FOR ALL 
+TO authenticated 
+USING (true) 
+WITH CHECK (true);
