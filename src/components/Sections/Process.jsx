@@ -5,7 +5,7 @@ import { MessageSquare, Layout, Calculator, Construction } from 'lucide-react';
 const steps = [
   {
     title: "Asesoría",
-    desc: "Definimos tus necesidades y el alcance técnico del proyecto en Sagunto.",
+    desc: "Definimos tus necesidades y el alcance técnico del proyecto.",
     icon: MessageSquare,
     color: "from-blue-500/20 to-cyan-500/0"
   },
@@ -17,13 +17,13 @@ const steps = [
   },
   {
     title: "Tech-Budget",
-    desc: "Presupuesto cerrado gracias a nuestro motor de cálculo inteligente.",
+    desc: "Nuestra calculadora te ofrece una aproximación del coste. Un técnico revisará tu proyecto y elaborará el presupuesto definitivo.",
     icon: Calculator,
     color: "from-emerald-500/20 to-teal-500/0"
   },
   {
     title: "Firma Conscugar",
-    desc: "Ejecución magistral con supervisión técnica diaria.",
+    desc: "Ejecución profesional con supervisión técnica diaria.",
     icon: Construction,
     color: "from-red-500/20 to-orange-500/0"
   }
