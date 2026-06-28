@@ -913,7 +913,8 @@ const Calculator = () => {
                 const isBano = data.tipo?.includes('bano') || data.tipo?.includes('baño');
                 const isCocina = data.tipo?.includes('cocina');
                 const needsAge = !isBano && !isCocina;
-                return data.hasElevator === null || !data.vivienda || (needsAge && !data.propertyAge);
+                const needsElevator = data.vivienda === 'piso';
+                return (needsElevator && data.hasElevator === null) || !data.vivienda || (needsAge && !data.propertyAge);
               })())
             } className="px-10 py-6 text-[10px] font-black tracking-widest rounded-none">CONTINUAR</Button>
           ) : step === 6 ? (
