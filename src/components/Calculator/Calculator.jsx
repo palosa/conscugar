@@ -779,7 +779,7 @@ const Calculator = () => {
                 </div>
                 <div className="p-5 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
                   <ShieldCheck className="w-5 h-5 text-primary/60 shrink-0" />
-                  <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · Conscugar Sagunto</p>
+                  <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · <span className="text-primary">Conscugar</span> Sagunto</p>
                 </div>
               </div>
             )}
@@ -892,7 +892,7 @@ const Calculator = () => {
                     <div className="w-full p-8 bg-primary/10 border border-primary/20 text-center space-y-3 animate-in zoom-in-95 duration-500">
                       <p className="text-primary font-black uppercase tracking-[0.3em] text-xs">¡Solicitud Recibida!</p>
                       <p className="text-white/80 text-sm font-medium leading-relaxed">
-                        Un técnico de Conscugar se pondrá en contacto contigo en los <br /> próximos días para concertar una visita y confeccionar el presupuesto final.
+                        Un técnico de <span className="text-primary font-bold">Conscugar</span> se pondrá en contacto contigo en los <br /> próximos días para concertar una visita y confeccionar el presupuesto final.
                       </p>
                     </div>
                   )}

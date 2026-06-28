@@ -100,10 +100,10 @@ const Portfolio = () => {
             </span>
             <h2
               id="portfolio-heading"
-              className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter text-white"
+              className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter text-white uppercase italic"
             >
               Nuestras obras en <br />
-              Sagunto <span className="italic font-normal text-white">y alrededores</span>
+              Sagunto <span className="not-italic font-normal text-white">y alrededores</span>
             </h2>
           </div>
           <p className="text-white max-w-xs text-sm leading-relaxed">

@@ -48,7 +48,7 @@ const Login = () => {
                Acceso <span className="text-primary italic">Admin</span>
              </h1>
              <p className="text-white/40 text-xs font-black uppercase tracking-widest leading-relaxed px-4">
-               Gestión de presupuestos y leads de Conscugar Sagunto
+               Gestión de presupuestos y leads de <span className="text-primary">Conscugar</span> Sagunto
              </p>
           </div>
 
@@ -123,7 +123,7 @@ const Login = () => {
         </div>
 
         <p className="text-center mt-12 text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-          © 2024 Conscugar · Sistema de Gestión
+          © 2024 <span className="text-primary">Conscugar</span> · Sistema de Gestión
         </p>
       </motion.div>
     </div>

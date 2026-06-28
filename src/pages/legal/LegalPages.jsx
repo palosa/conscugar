@@ -1,30 +1,36 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '../../components/Layout/Navbar';
 import { motion } from 'framer-motion';
 
-const LegalLayout = ({ title, children }) => (
-  <div className="min-h-screen bg-dark text-white font-outfit">
-    <Navbar />
-    <main className="max-w-4xl mx-auto px-6 pt-40 pb-20">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-12"
-      >
-        <header className="space-y-4 border-l-4 border-primary pl-8">
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Documentación Legal</p>
-          <h1 className="text-5xl font-black uppercase italic tracking-tighter">{title}</h1>
-        </header>
-        <div className="prose prose-invert prose-primary max-w-none text-white/60 leading-relaxed space-y-8 text-sm">
-          {children}
-        </div>
-      </motion.div>
-    </main>
-    <footer className="py-10 border-t border-white/5 text-center">
-       <p className="text-[10px] text-white/10 font-black uppercase tracking-widest">© 2024 Conscugar Premium Construction · Sagunto</p>
-    </footer>
-  </div>
-);
+const LegalLayout = ({ title, children }) => {
+  useEffect(() => {
+    document.title = `${title} | Conscugar Construcción y Reformas`;
+  }, [title]);
+
+  return (
+    <div className="min-h-screen bg-dark text-white font-outfit">
+      <Navbar />
+      <main className="max-w-4xl mx-auto px-6 pt-40 pb-20">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-12"
+        >
+          <header className="space-y-4 border-l-4 border-primary pl-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Documentación Legal</p>
+            <h1 className="text-5xl font-black uppercase italic tracking-tighter">{title}</h1>
+          </header>
+          <div className="prose prose-invert prose-primary max-w-none text-white/60 leading-relaxed space-y-8 text-sm">
+            {children}
+          </div>
+        </motion.div>
+      </main>
+      <footer className="py-10 border-t border-white/5 text-center">
+         <p className="text-[10px] text-white/10 font-black uppercase tracking-widest">© 2024 Conscugar Premium Construction · Sagunto</p>
+      </footer>
+    </div>
+  );
+};
 
 export const AvisoLegal = () => (
   <LegalLayout title="Aviso Legal">

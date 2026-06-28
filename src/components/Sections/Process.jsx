@@ -55,8 +55,8 @@ const Process = () => {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-24 space-y-4">
-           <p className="text-[10px] font-black uppercase text-primary tracking-[0.5em]">La Diferencia</p>
-           <h2 id="process-heading" className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white">Nuestro Método</h2>
+            <span className="text-[10px] font-black tracking-[0.4em] uppercase text-primary block">La Diferencia</span>
+            <h2 id="process-heading" className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter text-white uppercase italic">Nuestro Método</h2>
         </div>
 
         <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" aria-label="Pasos del proceso Conscugar">

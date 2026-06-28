@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Layout/Navbar';
 import Hero from '../components/Sections/Hero';
 import Process from '../components/Sections/Process';
+import About from '../components/Sections/About';
 import Portfolio from '../components/Sections/Portfolio';
 import Testimonials from '../components/Sections/Testimonials';
 import BackgroundOrbs from '../components/ui/BackgroundOrbs';
@@ -19,6 +20,7 @@ const Home = () => {
       <main>
         <Hero />
         <Process />
+        <About />
         <Portfolio />
         <Testimonials />
       </main>
@@ -33,8 +35,7 @@ const Home = () => {
             <div className="flex gap-4">
               {[
                 { id: 'fb', url: '#', label: 'Seguinos en Facebook' },
-                { id: 'ig', url: '#', label: 'Seguinos en Instagram' },
-                { id: 'in', url: '#', label: 'Conecta en LinkedIn' }
+                { id: 'ig', url: '#', label: 'Seguinos en Instagram' }
               ].map(social => (
                 <a
                   key={social.id}
@@ -81,7 +82,7 @@ const Home = () => {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.4em]">© {new Date().getFullYear()} Conscugar Construcción</p>
+          <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.4em]">© {new Date().getFullYear()} <span className="text-primary">Conscugar</span> Construcción</p>
           <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">Hecho con precisión en Sagunto</p>
         </div>
       </footer>
