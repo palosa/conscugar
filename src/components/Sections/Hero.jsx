@@ -76,7 +76,7 @@ export const Hero = () => {
               <span className="text-white/20">en</span>
               <span className="text-primary italic"> Sagunto</span>
             </h1>
-            <p className="max-w-md text-xs sm:text-base lg:text-sm text-white/50 font-bold uppercase tracking-[0.3em] leading-relaxed">
+            <p className="max-w-md text-xs sm:text-base lg:text-sm text-white/70 font-bold uppercase tracking-[0.3em] leading-relaxed">
                Transformamos viviendas comunes en espacios magistrales. Arquitectura de vanguardia y ejecución técnica en Sagunto.
             </p>
           </motion.div>

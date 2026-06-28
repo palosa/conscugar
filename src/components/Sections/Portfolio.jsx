@@ -131,7 +131,7 @@ const Portfolio = () => {
                   {project.gallery.length > 1 && (
                     <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 flex items-center gap-2">
                       <Images className="w-3 h-3 text-primary" aria-hidden="true" />
-                      <span className="text-[9px] font-black text-white/60">{project.gallery.length} fotos</span>
+                      <span className="text-[9px] font-black text-white/80">{project.gallery.length} fotos</span>
                     </div>
                   )}
 
@@ -180,12 +180,12 @@ const Portfolio = () => {
                     <h3 className="text-base font-black uppercase tracking-tight text-white leading-tight">
                       {project.title}
                     </h3>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold mt-1">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/70 font-bold mt-1">
                       <MapPin className="w-3 h-3 inline mr-1 text-primary" aria-hidden="true" />
                       {project.location} · {project.year}
                     </p>
                   </div>
-                  <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2">{project.description}</p>
+                  <p className="text-[11px] text-white/75 leading-relaxed line-clamp-2">{project.description}</p>
 
                   {/* Ver Detalle — PROMINENT, always visible */}
                   <button
@@ -195,7 +195,7 @@ const Portfolio = () => {
                     className="mt-auto flex items-center justify-between w-full border border-white/10 group-hover:border-primary/40 px-4 py-3 transition-all"
                     onClick={e => { e.stopPropagation(); openProject(project); }}
                   >
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-white transition-colors">
                       Ver detalles del proyecto
                     </span>
                     <ChevronRight className="w-4 h-4 text-primary transition-transform group-hover:translate-x-1" aria-hidden="true" />
@@ -323,21 +323,21 @@ const Portfolio = () => {
                     <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
                       <div className="flex items-center gap-3">
                         <MapPin className="text-primary w-4 h-4 shrink-0" aria-hidden="true" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">{selectedProject.location}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/70">{selectedProject.location}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <Calendar className="text-primary w-4 h-4 shrink-0" aria-hidden="true" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Año {selectedProject.year}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Año {selectedProject.year}</p>
                       </div>
                     </div>
 
-                    <p className="text-white/60 leading-relaxed text-sm italic">"{selectedProject.description}"</p>
+                    <p className="text-white/85 leading-relaxed text-sm italic">"{selectedProject.description}"</p>
 
                     <ul className="space-y-3" aria-label="Detalles del proyecto">
                       {selectedProject.details.map((detail, k) => (
                         <li key={k} className="flex gap-4 items-start">
                           <div className="w-1 h-1 bg-primary rounded-full mt-2 shrink-0 shadow-[0_0_10px_#F5C518]" aria-hidden="true" />
-                          <p className="text-xs text-white/50 leading-relaxed">{detail}</p>
+                          <p className="text-xs text-white/80 leading-relaxed">{detail}</p>
                         </li>
                       ))}
                     </ul>

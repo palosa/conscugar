@@ -20,7 +20,7 @@ const Navbar = () => {
             Cons<span className="text-primary">cugar</span>
           </span>
           <div className="h-4 w-[1px] bg-white/20 mx-2 hidden sm:block" />
-          <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/40 hidden sm:block">
+          <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/60 hidden sm:block">
             Sagunto · Valencia
           </span>
         </div>
@@ -30,7 +30,7 @@ const Navbar = () => {
             <a
               key={item.label}
               href={item.href}
-              className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-primary transition-colors"
+              className="text-xs font-black uppercase tracking-widest text-white/60 hover:text-primary transition-colors"
             >
               {item.label}
             </a>
