@@ -217,23 +217,25 @@ const Portfolio = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-12 overflow-y-auto bg-dark/95 backdrop-blur-3xl"
+              onClick={() => setSelectedProject(null)}
             >
-              <button
-                type="button"
-                aria-label="Cerrar detalle del proyecto"
-                onClick={() => setSelectedProject(null)}
-                className="fixed top-6 right-6 z-[110] w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-dark transition-all"
-              >
-                <X className="w-6 h-6" aria-hidden="true" />
-              </button>
-
               <motion.div
                 initial={{ y: 30, opacity: 0, scale: 0.98 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: 20, opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-6xl flex flex-col lg:flex-row bg-dark-lighter border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+                className="relative w-full max-w-6xl flex flex-col lg:flex-row bg-dark-lighter border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+                onClick={(e) => e.stopPropagation()}
               >
+                {/* Botón Cerrar */}
+                <button
+                  type="button"
+                  aria-label="Cerrar detalle del proyecto"
+                  onClick={() => setSelectedProject(null)}
+                  className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/60 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:text-dark transition-all"
+                >
+                  <X className="w-5 h-5" aria-hidden="true" />
+                </button>
                 {/* Gallery panel */}
                 <div className="w-full lg:w-3/5 flex flex-col">
                   <div className="relative h-[300px] sm:h-[420px] lg:h-full min-h-[300px] bg-black overflow-hidden">

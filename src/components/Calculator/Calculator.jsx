@@ -77,10 +77,7 @@ const playHapticTick = () => {
 };
 
 const Calculator = () => {
-  const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem('ccg_step');
-    return saved ? Number(saved) : 1;
-  });
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [visitRequested, setVisitRequested] = useState(false);
@@ -97,33 +94,18 @@ const Calculator = () => {
     globalSettings: []
   });
 
-  const [data, setData] = useState(() => {
-    const saved = localStorage.getItem('ccg_data');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) { }
-    }
-    return {
-      tipo: '',
-      m2: 0,
-      hasElevator: null,
-      propertyAge: '',
-      calidad: '',
-      vivienda: '',
-      selectedExtras: [],
-      name: '',
-      email: '',
-      phone: ''
-    };
+  const [data, setData] = useState({
+    tipo: '',
+    m2: 0,
+    hasElevator: null,
+    propertyAge: '',
+    calidad: '',
+    vivienda: '',
+    selectedExtras: [],
+    name: '',
+    email: '',
+    phone: ''
   });
-
-  useEffect(() => {
-    if (step < 7) {
-      localStorage.setItem('ccg_step', step);
-      localStorage.setItem('ccg_data', JSON.stringify(data));
-    }
-  }, [step, data]);
 
   useEffect(() => {
     fetchFullConfig();
