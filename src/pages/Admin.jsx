@@ -47,7 +47,7 @@ const SortableProjectItem = ({ p, onUpdate, onDelete }) => {
       <div className="w-10 h-10 bg-dark/50 border border-white/5 flex items-center justify-center text-primary shrink-0">
         <Icon className="w-5 h-5" />
       </div>
-      <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input
           type="text"
           value={p.name}
@@ -62,6 +62,16 @@ const SortableProjectItem = ({ p, onUpdate, onDelete }) => {
           <option value="m2">Por m²</option>
           <option value="fixed">Precio Único</option>
         </select>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={p.base_price_fallback || 0}
+            onChange={(e) => onUpdate('project_types', p.id, 'base_price_fallback', Number(e.target.value))}
+            className="bg-dark/40 border border-white/10 p-2 text-sm font-black text-right text-primary outline-none focus:border-primary/40 w-full"
+            placeholder="Precio Base"
+          />
+          <span className="text-[10px] text-white/40 font-bold shrink-0">€</span>
+        </div>
       </div>
       <button onClick={() => onDelete('project_types', p.id)} className="text-white/5 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0">
         <Trash2 className="w-4 h-4" />
@@ -202,6 +212,8 @@ const Admin = () => {
       setGlobalSettings(prev => prev.map(item => item.key === id ? { ...item, [field]: value } : item));
     } else if (table === 'testimonials') {
       setTestimonials(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    } else if (table === 'project_types') {
+      setProjectTypes(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
     }
 
     // 2. Sincronización con la Base de Datos
