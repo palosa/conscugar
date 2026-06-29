@@ -339,8 +339,10 @@ const Calculator = () => {
       
       if (extra.is_quality_dependent !== false) {
          if (data.calidad === 'basica') p = extra.price_basic || p;
-         else if (data.calidad === 'alta') p = extra.price_high || p * 2;
-         else p = extra.price_medium || p * 1.5;
+         else if (data.calidad === 'media') p = extra.price_medium || p;
+         else if (data.calidad === 'alta') p = extra.price_high || p;
+         else if (data.calidad === 'premium') p = extra.price_premium || extra.price_high * 1.3 || p * 2.2;
+         else p = extra.price_medium || p;
       }
       
       if (extra.price_type === 'm2' && p < 150) p *= Math.max(Number(data.m2), 5); // Consistente con SafeM2 y pricing.js
@@ -663,8 +665,10 @@ const Calculator = () => {
                 let p = Number(extra.price || 0);
                 if (extra.is_quality_dependent !== false) {
                   if (data.calidad === 'basica') p = extra.price_basic || p;
-                  else if (data.calidad === 'alta') p = extra.price_high || p * 2;
-                  else p = extra.price_medium || p * 1.5;
+                  else if (data.calidad === 'media') p = extra.price_medium || p;
+                  else if (data.calidad === 'alta') p = extra.price_high || p;
+                  else if (data.calidad === 'premium') p = extra.price_premium || extra.price_high * 1.3 || p * 2.2;
+                  else p = extra.price_medium || p;
                 }
                 if (extra.price_type === 'm2') p *= Math.max(Number(data.m2), 5);
                 return acc + Math.round(p);
@@ -709,8 +713,10 @@ const Calculator = () => {
                                 let p = Number(extra.price || 0);
                                 if (extra.is_quality_dependent !== false) {
                                    if (data.calidad === 'basica') p = extra.price_basic || p;
-                                   else if (data.calidad === 'alta') p = extra.price_high || p * 2;
-                                   else p = extra.price_medium || p * 1.5;
+                                   else if (data.calidad === 'media') p = extra.price_medium || p;
+                                   else if (data.calidad === 'alta') p = extra.price_high || p;
+                                   else if (data.calidad === 'premium') p = extra.price_premium || extra.price_high * 1.3 || p * 2.2;
+                                   else p = extra.price_medium || p;
                                 }
                                 if (extra.price_type === 'm2') p *= Math.max(Number(data.m2), 5);
                                 return `+${Math.round(p).toLocaleString()}€`;

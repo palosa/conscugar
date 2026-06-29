@@ -863,8 +863,13 @@ const Admin = () => {
                           />
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          {[['Básica', 'price_basic'], ['Media', 'price_medium'], ['Alta', 'price_high']].map(([label, field]) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            ['Básica', 'price_basic'],
+                            ['Media', 'price_medium'],
+                            ['Alta', 'price_high'],
+                            ['Premium', 'price_premium']
+                          ].map(([label, field]) => (
                             <div key={field} className="space-y-1">
                               <label className="text-[8px] font-black text-white/20 uppercase">{label} (€ {e.price_type === 'm2' ? '/m²' : 'fijo'})</label>
                               <input

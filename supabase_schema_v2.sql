@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS extras (
   price_basic NUMERIC,
   price_medium NUMERIC,
   price_high NUMERIC,
+  price_premium NUMERIC,
   price_type TEXT DEFAULT 'fixed',
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -103,13 +104,13 @@ INSERT INTO pricing_config (project_type, range_min, range_max, price_per_m2) VA
 ('reforma_parcial', 0, 99999, 280);
 
 -- Datos semilla para extras
-INSERT INTO extras (id, name, price, icon, category, project_types, is_quality_dependent, price_basic, price_medium, price_high, price_type) VALUES
-('demolicion', 'Demolición técnica y desescombro', 1200, 'Trash2', 'Fases de Obra', ARRAY['reforma_integral','bano','cocina','reforma_parcial'], false, 1200, 1200, 1200, 'fixed'),
-('fontaneria', 'Instalación nueva de fontanería y saneamiento', 1500, 'ShowerHead', 'Instalaciones', ARRAY['reforma_integral','bano','cocina'], true, 1200, 1500, 2200, 'fixed'),
-('electricidad', 'Instalación eléctrica completa bajo normativa', 2200, 'Zap', 'Instalaciones', ARRAY['reforma_integral','bano','cocina','obra_nueva'], true, 1800, 2200, 3100, 'fixed'),
-('climatizacion', 'Sistema de Climatización por Conductos (Inverter)', 3500, 'Wind', 'Confort', ARRAY['reforma_integral','obra_nueva'], false, 3500, 3500, 3500, 'fixed'),
-('pintura', 'Pintura plástica lisa lavable premium', 18, 'Palette', 'Acabados', ARRAY['reforma_integral','bano','cocina','obra_nueva','rehabilitacion','reforma_parcial'], true, 14, 18, 25, 'm2'),
-('pladur', 'Tabiquería y falsos techos de pladur', 25, 'Square', 'Estructuras', ARRAY['reforma_integral','obra_nueva','reforma_parcial'], false, 25, 25, 25, 'm2');
+INSERT INTO extras (id, name, price, icon, category, project_types, is_quality_dependent, price_basic, price_medium, price_high, price_premium, price_type) VALUES
+('demolicion', 'Demolición técnica y desescombro', 1200, 'Trash2', 'Fases de Obra', ARRAY['reforma_integral','bano','cocina','reforma_parcial'], false, 1200, 1200, 1200, 1200, 'fixed'),
+('fontaneria', 'Instalación nueva de fontanería y saneamiento', 1500, 'ShowerHead', 'Instalaciones', ARRAY['reforma_integral','bano','cocina'], true, 1200, 1500, 2200, 3200, 'fixed'),
+('electricidad', 'Instalación eléctrica completa bajo normativa', 2200, 'Zap', 'Instalaciones', ARRAY['reforma_integral','bano','cocina','obra_nueva'], true, 1800, 2200, 3100, 4500, 'fixed'),
+('climatizacion', 'Sistema de Climatización por Conductos (Inverter)', 3500, 'Wind', 'Confort', ARRAY['reforma_integral','obra_nueva'], false, 3500, 3500, 3500, 3500, 'fixed'),
+('pintura', 'Pintura plástica lisa lavable premium', 18, 'Palette', 'Acabados', ARRAY['reforma_integral','bano','cocina','obra_nueva','rehabilitacion','reforma_parcial'], true, 14, 18, 25, 35, 'm2'),
+('pladur', 'Tabiquería y falsos techos de pladur', 25, 'Square', 'Estructuras', ARRAY['reforma_integral','obra_nueva','reforma_parcial'], false, 25, 25, 25, 25, 'm2');
 
 -- 4. Tabla de Testimonios (Preparada para Google Reviews)
 CREATE TABLE IF NOT EXISTS testimonials (
