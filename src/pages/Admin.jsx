@@ -135,6 +135,12 @@ const Admin = () => {
   const [housingSettings, setHousingSettings] = useState([]);
   const [globalSettings, setGlobalSettings] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [newRange, setNewRange] = useState({
+    project_type: '',
+    range_min: 0,
+    range_max: 100,
+    price_per_m2: 400
+  });
 
   // UI
   const [searchTerm, setSearchTerm] = useState('');
@@ -172,7 +178,12 @@ const Admin = () => {
       if (leadsRes.data) setLeads(leadsRes.data);
       if (pricingRes.data) setPricing(pricingRes.data);
       if (extrasRes.data) setExtras(extrasRes.data);
-      if (projectsRes.data) setProjectTypes(projectsRes.data);
+      if (projectsRes.data) {
+        setProjectTypes(projectsRes.data);
+        if (projectsRes.data.length > 0) {
+          setNewRange(prev => ({ ...prev, project_type: prev.project_type || projectsRes.data[0].id }));
+        }
+      }
       if (qualityRes.data) setQualitySettings(qualityRes.data);
       if (housingRes.data) setHousingSettings(housingRes.data);
       if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
@@ -278,6 +289,27 @@ const Admin = () => {
       }
     } catch (err) {
       console.error("Error adding testimonial:", err);
+    }
+  };
+
+  const handleAddPricingRange = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pricing_config')
+        .insert([newRange])
+        .select();
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setPricing(prev => [...prev, data[0]]);
+        setNewRange(prev => ({
+          ...prev,
+          range_min: Number(prev.range_max) + 1,
+          range_max: Number(prev.range_max) + 50
+        }));
+      }
+    } catch (err) {
+      console.error("Error adding pricing range:", err);
+      alert("Error al añadir rango: " + err.message);
     }
   };
 
@@ -881,29 +913,109 @@ const Admin = () => {
 
           {/* ═══════════════ PRICING TAB ═══════════════ */}
           {activeTab === 'pricing' && (
-            <div className="space-y-3">
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest p-4 border border-white/5 bg-white/[0.02]">
-                Estos rangos definen el precio base por m² según el tipo de obra y el tamaño de la intervención.
-              </p>
-              {pricing.map(p => (
-                <div key={p.id} className="p-5 bg-white/5 border border-white/5 flex items-center justify-between group hover:border-primary/10 transition-all">
-                  <div>
-                    <span className="text-xs font-black uppercase text-white/60">{p.project_type?.replace(/_/g, ' ')}</span>
-                    <span className="text-[9px] text-white/20 ml-3 font-bold">({p.range_min} – {p.range_max} m²)</span>
+            <div className="space-y-6">
+              {/* Formulario de creación */}
+              <div className="p-6 bg-white/5 border border-white/5 space-y-4">
+                <h4 className="text-xs font-black uppercase text-primary tracking-widest">Añadir Nuevo Rango de Precio</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                  <div className="space-y-2">
+                    <label className="text-[8px] font-black text-white/20 uppercase">Tipo de Obra</label>
+                    <select
+                      value={newRange.project_type}
+                      onChange={e => setNewRange(prev => ({ ...prev, project_type: e.target.value }))}
+                      className="w-full bg-dark/60 border border-white/10 p-2 text-xs font-black uppercase text-white outline-none focus:border-primary/40"
+                    >
+                      {projectTypes.map(pt => (
+                        <option key={pt.id} value={pt.id}>{pt.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[8px] font-black text-white/20 uppercase">Min m²</label>
                     <input
-                      type="number" value={p.price_per_m2}
-                      onChange={e => handleUpdate('pricing_config', p.id, 'price_per_m2', Number(e.target.value))}
-                      className="w-28 bg-dark/50 border border-white/10 p-3 text-right font-black text-primary outline-none focus:border-primary"
+                      type="number"
+                      value={newRange.range_min}
+                      onChange={e => setNewRange(prev => ({ ...prev, range_min: Number(e.target.value) }))}
+                      className="w-full bg-dark/60 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
                     />
-                    <span className="text-xs font-bold text-white/20">€/m²</span>
-                    <button onClick={() => handleDelete('pricing_config', p.id)} className="text-white/5 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[8px] font-black text-white/20 uppercase">Max m²</label>
+                    <input
+                      type="number"
+                      value={newRange.range_max}
+                      onChange={e => setNewRange(prev => ({ ...prev, range_max: Number(e.target.value) }))}
+                      className="w-full bg-dark/60 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[8px] font-black text-white/20 uppercase">Precio (€/m²)</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="number"
+                        value={newRange.price_per_m2}
+                        onChange={e => setNewRange(prev => ({ ...prev, price_per_m2: Number(e.target.value) }))}
+                        className="w-full bg-dark/60 border border-white/10 p-2 text-xs font-black text-primary outline-none focus:border-primary/40"
+                      />
+                      <Button onClick={handleAddPricingRange} variant="primary" className="py-2.5 text-[9px] font-black tracking-widest uppercase shrink-0">AÑADIR</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Listado de rangos */}
+              <div className="space-y-3">
+                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest p-4 border border-white/5 bg-white/[0.02]">
+                  Configuración actual de rangos por metro cuadrado (m²):
+                </p>
+                {[...pricing].sort((a, b) => {
+                  const comp = (a.project_type || '').localeCompare(b.project_type || '');
+                  if (comp !== 0) return comp;
+                  return a.range_min - b.range_min;
+                }).map(p => (
+                  <div key={p.id} className="p-5 bg-white/5 border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group hover:border-primary/10 transition-all relative">
+                    {savingId?.includes(`pricing_config-${p.id}`) && (
+                      <span className="absolute top-2 right-2 text-[7px] font-black text-primary animate-pulse uppercase tracking-wider">Guardando...</span>
+                    )}
+                    <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-3 items-center w-full">
+                      <span className="text-xs font-black uppercase text-white/80">{p.project_type?.replace(/_/g, ' ')}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] font-black text-white/20 uppercase shrink-0">Min:</span>
+                        <input
+                          type="number"
+                          value={p.range_min}
+                          onChange={e => handleUpdate('pricing_config', p.id, 'range_min', Number(e.target.value))}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
+                        />
+                        <span className="text-[10px] text-white/40 font-bold">m²</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] font-black text-white/20 uppercase shrink-0">Max:</span>
+                        <input
+                          type="number"
+                          value={p.range_max}
+                          onChange={e => handleUpdate('pricing_config', p.id, 'range_max', Number(e.target.value))}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-bold text-white outline-none focus:border-primary/40"
+                        />
+                        <span className="text-[10px] text-white/40 font-bold">m²</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] font-black text-white/20 uppercase shrink-0">Precio:</span>
+                        <input
+                          type="number"
+                          value={p.price_per_m2}
+                          onChange={e => handleUpdate('pricing_config', p.id, 'price_per_m2', Number(e.target.value))}
+                          className="w-full bg-dark/40 border border-white/10 p-2 text-xs font-black text-primary outline-none focus:border-primary/40"
+                        />
+                        <span className="text-[10px] text-white/40 font-bold">€/m²</span>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDelete('pricing_config', p.id)} className="text-white/5 hover:text-red-500 transition-all sm:opacity-0 group-hover:opacity-100 shrink-0 self-end sm:self-center p-2">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
           {/* ═══════════════ TESTIMONIALS TAB ═══════════════ */}
