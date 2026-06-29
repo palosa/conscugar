@@ -61,30 +61,55 @@ INSERT INTO global_settings (key, value, description) VALUES
 ('iva_rate', '0.21', 'Tipo de IVA aplicable (21%)'),
 ('currency_symbol', '€', 'Símbolo de la moneda');
 
--- 3. Actualización de las tablas existentes para consistencia (Pricing Config & Extras)
+-- 3. Tablas de Precios y Extras (Estructura y Datos Semilla)
 
--- Asegurar que pricing_config tiene los campos correctos para rangos de m2
--- (Esto ya estaba en la v1, pero lo reforzamos)
--- CREATE TABLE IF NOT EXISTS pricing_config (
---   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
---   project_type TEXT REFERENCES project_types(id),
---   range_min NUMERIC NOT NULL,
---   range_max NUMERIC NOT NULL,
---   price_per_m2 NUMERIC NOT NULL,
---   created_at TIMESTAMPTZ DEFAULT now()
--- );
+-- Rangos de precios por m² para la calculadora
+CREATE TABLE IF NOT EXISTS pricing_config (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_type TEXT REFERENCES project_types(id) ON DELETE CASCADE,
+  range_min NUMERIC NOT NULL,
+  range_max NUMERIC NOT NULL,
+  price_per_m2 NUMERIC NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Asegurar que extras tiene campos para categorías e iconos editables
--- (Esto ya estaba en la v1, pero lo reforzamos)
--- CREATE TABLE IF NOT EXISTS extras (
---   id TEXT PRIMARY KEY,
---   name TEXT NOT NULL,
---   price NUMERIC NOT NULL,
---   icon TEXT DEFAULT 'Check',
---   category TEXT DEFAULT 'Otros',
---   project_types TEXT[] DEFAULT '{}',
---   created_at TIMESTAMPTZ DEFAULT now()
--- );
+-- Extras configurables
+CREATE TABLE IF NOT EXISTS extras (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  price NUMERIC NOT NULL,
+  icon TEXT DEFAULT 'Check',
+  category TEXT DEFAULT 'Otros',
+  project_types TEXT[] DEFAULT '{}',
+  is_quality_dependent BOOLEAN DEFAULT false,
+  price_basic NUMERIC,
+  price_medium NUMERIC,
+  price_high NUMERIC,
+  price_type TEXT DEFAULT 'fixed',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Datos semilla para precios base (rangos de m²)
+INSERT INTO pricing_config (project_type, range_min, range_max, price_per_m2) VALUES
+('reforma_integral', 0, 50, 480),
+('reforma_integral', 51, 100, 420),
+('reforma_integral', 101, 99999, 390),
+('bano', 0, 8, 800),
+('bano', 9, 99999, 700),
+('cocina', 0, 15, 680),
+('cocina', 16, 99999, 600),
+('obra_nueva', 0, 99999, 950),
+('rehabilitacion', 0, 99999, 300),
+('reforma_parcial', 0, 99999, 280);
+
+-- Datos semilla para extras
+INSERT INTO extras (id, name, price, icon, category, project_types, is_quality_dependent, price_basic, price_medium, price_high, price_type) VALUES
+('demolicion', 'Demolición técnica y desescombro', 1200, 'Trash2', 'Fases de Obra', ARRAY['reforma_integral','bano','cocina','reforma_parcial'], false, 1200, 1200, 1200, 'fixed'),
+('fontaneria', 'Instalación nueva de fontanería y saneamiento', 1500, 'ShowerHead', 'Instalaciones', ARRAY['reforma_integral','bano','cocina'], true, 1200, 1500, 2200, 'fixed'),
+('electricidad', 'Instalación eléctrica completa bajo normativa', 2200, 'Zap', 'Instalaciones', ARRAY['reforma_integral','bano','cocina','obra_nueva'], true, 1800, 2200, 3100, 'fixed'),
+('climatizacion', 'Sistema de Climatización por Conductos (Inverter)', 3500, 'Wind', 'Confort', ARRAY['reforma_integral','obra_nueva'], false, 3500, 3500, 3500, 'fixed'),
+('pintura', 'Pintura plástica lisa lavable premium', 18, 'Palette', 'Acabados', ARRAY['reforma_integral','bano','cocina','obra_nueva','rehabilitacion','reforma_parcial'], true, 14, 18, 25, 'm2'),
+('pladur', 'Tabiquería y falsos techos de pladur', 25, 'Square', 'Estructuras', ARRAY['reforma_integral','obra_nueva','reforma_parcial'], false, 25, 25, 25, 'm2');
 
 -- 4. Tabla de Testimonios (Preparada para Google Reviews)
 CREATE TABLE IF NOT EXISTS testimonials (
@@ -118,3 +143,34 @@ ON testimonials FOR ALL
 TO authenticated 
 USING (true) 
 WITH CHECK (true);
+
+-- 6. Seguridad y Políticas de Acceso (RLS) para Tablas de Configuración y Precios
+
+-- Habilitar RLS en todas las tablas maestras
+ALTER TABLE project_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quality_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE housing_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE global_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extras ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Lectura Pública (Permite a la calculadora web consultar los datos de precios)
+CREATE POLICY "Permitir lectura pública de project_types" ON project_types FOR SELECT USING (true);
+CREATE POLICY "Permitir lectura pública de quality_settings" ON quality_settings FOR SELECT USING (true);
+CREATE POLICY "Permitir lectura pública de housing_settings" ON housing_settings FOR SELECT USING (true);
+CREATE POLICY "Permitir lectura pública de global_settings" ON global_settings FOR SELECT USING (true);
+CREATE POLICY "Permitir lectura pública de pricing_config" ON pricing_config FOR SELECT USING (true);
+CREATE POLICY "Permitir lectura pública de extras" ON extras FOR SELECT USING (true);
+
+-- Políticas de Escritura Pública para Leads (Permite a la calculadora web insertar nuevas solicitudes de contacto)
+CREATE POLICY "Permitir inserción pública de leads" ON leads FOR INSERT WITH CHECK (true);
+
+-- Políticas de Control Total para Administradores Autenticados (Permite editar desde la sección /admin)
+CREATE POLICY "Permitir control total de project_types a administradores" ON project_types FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de quality_settings a administradores" ON quality_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de housing_settings a administradores" ON housing_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de global_settings a administradores" ON global_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de pricing_config a administradores" ON pricing_config FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de extras a administradores" ON extras FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir control total de leads a administradores" ON leads FOR ALL TO authenticated USING (true) WITH CHECK (true);
