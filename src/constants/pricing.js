@@ -121,16 +121,9 @@ export const calculateBudget = (data, config = {}) => {
 
   const totalGross = subtotalPEM + icioTax + contingencyMargin;
   
-  // 9. Aplicar IVA Final (10% reducido en obras residenciales/autopromoción, 21% general en locales/comerciales)
-  const isResidential = ['piso', 'casa', 'chalet'].includes(vivienda);
-  const isObraNueva = tipo === 'obra_nueva';
-  let ivaRate = 0.21;
-  if (isResidential || isObraNueva) {
-    ivaRate = 0.10; // IVA reducido en España para autopromoción de viviendas o reformas residenciales
-  } else {
-    const ivaSetting = globalSettings.find(s => s.key === 'iva_rate');
-    ivaRate = ivaSetting ? Number(ivaSetting.value) : 0.21;
-  }
+  // 9. Aplicar IVA Final desde la base de datos (global_settings -> iva_rate)
+  const ivaSetting = globalSettings.find(s => s.key === 'iva_rate');
+  const ivaRate = ivaSetting ? Number(ivaSetting.value) : 0.21;
   
   const iva = Math.round(totalGross * ivaRate);
   const totalWithIVA = totalGross + iva;

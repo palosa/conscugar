@@ -845,7 +845,8 @@ const Calculator = () => {
                         className="flex items-center justify-between px-5 py-3"
                       >
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-tight text-white/60">{item.label}</p>
+                          <p className="text-[10px] font-black uppercase tracking-tight text-white/60">{item.label};
+                          </p>
                           <p className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{item.sub}</p>
                         </div>
                         <span className="text-[11px] font-black text-white/80 tabular-nums">{item.value.toLocaleString()}€</span>
