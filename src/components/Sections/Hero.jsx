@@ -71,9 +71,9 @@ export const Hero = () => {
               className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter uppercase italic leading-[1.1] sm:leading-[1] lg:leading-[0.95]"
             >
               <span className="text-white">Construcciones</span> <br />
-              <span className="text-white/20">Y</span>
+              <span className="text-white/60">Y</span>
               <span className="text-primary italic"> Reformas</span><br />
-              <span className="text-white/20">en</span>
+              <span className="text-white/60">en</span>
               <span className="text-primary italic"> Sagunto</span>
             </h1>
             <p className="max-w-md text-xs sm:text-base lg:text-sm text-white/70 font-bold uppercase tracking-[0.3em] leading-relaxed">

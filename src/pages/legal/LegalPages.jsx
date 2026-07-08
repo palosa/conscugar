@@ -17,7 +17,7 @@ const LegalLayout = ({ title, children }) => {
           className="space-y-12"
         >
           <header className="space-y-4 border-l-4 border-primary pl-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Documentación Legal</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">Documentación Legal</p>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter">{title}</h1>
           </header>
           <div className="prose prose-invert prose-primary max-w-none text-white/60 leading-relaxed space-y-8 text-sm">
@@ -26,7 +26,7 @@ const LegalLayout = ({ title, children }) => {
         </motion.div>
       </main>
       <footer className="py-10 border-t border-white/5 text-center">
-         <p className="text-[10px] text-white/10 font-black uppercase tracking-widest">© 2024 Conscugar Premium Construction · Sagunto</p>
+         <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">© 2024 Conscugar Premium Construction · Sagunto</p>
       </footer>
     </div>
   );

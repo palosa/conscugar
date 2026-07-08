@@ -482,13 +482,13 @@ const Calculator = () => {
                   <div className={cn(
                     "w-6 h-6 flex items-center justify-center text-[8px] font-black transition-all duration-500",
                     isActive ? "bg-primary text-dark shadow-[0_0_14px_rgba(245,197,24,0.5)] scale-110" :
-                    isDone ? "bg-primary/20 text-primary" : "bg-white/5 text-white/15"
+                    isDone ? "bg-primary/20 text-primary" : "bg-white/5 text-white/25"
                   )}>
                     {isDone ? <Check className="w-3 h-3 stroke-[4px]" /> : s}
                   </div>
                   <span className={cn(
                     "text-[7px] font-black uppercase tracking-wider hidden sm:block transition-all leading-none",
-                    isActive ? "text-primary" : isDone ? "text-white/25" : "text-white/10"
+                    isActive ? "text-primary" : isDone ? "text-white/25" : "text-white/25"
                   )}>{label}</span>
                 </div>
                 {s < 7 && <div className={cn("flex-1 h-[1px] mt-3 mx-0.5 sm:mx-1 transition-all duration-700", isDone ? "bg-primary/30" : "bg-white/5")} />}
@@ -561,7 +561,7 @@ const Calculator = () => {
                           )}>{type.name}</h3>
                           <p className={cn(
                             "text-[8px] font-bold uppercase tracking-widest transition-all",
-                            isActive ? "text-primary/80" : "text-white/10"
+                            isActive ? "text-primary/80" : "text-white/35 group-hover:text-white/60"
                           )}>{isActive ? 'Seleccionado' : 'Elegir'}</p>
                         </div>
                       </div>
@@ -580,7 +580,7 @@ const Calculator = () => {
               return (
                 <div className="space-y-12 py-10 text-center">
                   <div className="flex items-center justify-center gap-4 sm:gap-12">
-                    <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - step2))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6" /></button>
+                    <button onClick={() => updateData('m2', Math.max(1, Number(data.m2) - step2))} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/25 hover:text-primary active:scale-90"><ChevronLeft className="w-6 h-6" /></button>
                     <div className="relative group min-w-[150px] flex flex-col items-center">
                       <input
                         type="number"
@@ -595,20 +595,20 @@ const Calculator = () => {
                         className="bg-transparent text-7xl sm:text-8xl font-black text-center w-full outline-none text-primary italic tabular-nums transition-all focus:text-white"
                         placeholder="0"
                       />
-                      <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/10 font-black italic">M²</div>
+                      <div className="absolute -right-6 sm:-right-10 bottom-6 text-xl text-white/25 font-black italic">M²</div>
                       <div className="h-[1px] w-32 bg-white/5 relative mt-2 overflow-hidden text-transparent">_</div>
                     </div>
-                    <button onClick={() => updateData('m2', Number(data.m2) + step2)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/20 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6" /></button>
+                    <button onClick={() => updateData('m2', Number(data.m2) + step2)} className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all text-white/25 hover:text-primary active:scale-90"><ChevronRight className="w-6 h-6" /></button>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {presets.map(m => (
-                      <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/20 hover:text-white")}>{m} m²</button>
+                      <button key={m} onClick={() => updateData('m2', m)} className={cn("px-4 py-2 text-[10px] font-bold border transition-all", data.m2 === m ? "bg-primary text-dark border-primary" : "bg-white/5 border-white/5 text-white/25 hover:text-white")}>{m} m²</button>
                     ))}
                   </div>
                   {Number(data.m2) > 0 && Number(data.m2) < 15 && (
                     <p className="text-[9px] text-amber-400/60 font-bold uppercase tracking-widest">Superficie muy pequeña. ¿Es solo una estancia?</p>
                   )}
-                  <p className="text-[8px] text-white/15 font-bold uppercase tracking-widest">Máx. 2.000 m² · ¿No sabes los m²? Confírmalo en la visita técnica gratuita.</p>
+                  <p className="text-[8px] text-white/25 font-bold uppercase tracking-widest">Máx. 2.000 m² · ¿No sabes los m²? Confírmalo en la visita técnica gratuita.</p>
                 </div>
               );
             })()}
@@ -674,11 +674,11 @@ const Calculator = () => {
                         )}
                       >
                         <div className="flex justify-between items-center">
-                          <span className={cn("text-[11px] font-black uppercase tracking-widest transition-colors", isActive ? "text-white" : "text-white/30 group-hover:text-white/60")}>{q.label}</span>
+                          <span className={cn("text-[11px] font-black uppercase tracking-widest transition-colors", isActive ? "text-white" : "text-white/60 group-hover:text-white/85")}>{q.label}</span>
                           <div className={cn("w-3 h-3 rounded-none rotate-45 transition-all", isActive ? "bg-primary shadow-[0_0_10px_#F5C518]" : "bg-white/10")} />
                         </div>
                         {q.description && (
-                          <p className={cn("text-[10px] leading-relaxed transition-colors max-w-md", isActive ? "text-white/60" : "text-white/20 group-hover:text-white/40")}>
+                          <p className={cn("text-[10px] leading-relaxed transition-colors max-w-md", isActive ? "text-white/60" : "text-white/40 group-hover:text-white/40")}>
                             {q.description}
                           </p>
                         )}
@@ -709,12 +709,12 @@ const Calculator = () => {
               if (availableExtras.length === 0) return (
                 <div className="flex flex-col items-center justify-center py-16 gap-4 opacity-40">
                   <div className="w-12 h-12 border border-white/10 flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white/30" />
+                    <Check className="w-5 h-5 text-white/60" />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 text-center">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60 text-center">
                     No hay extras configurados<br/>para este tipo de obra
                   </p>
-                  <p className="text-[9px] text-white/20 text-center">Puedes continuar al siguiente paso</p>
+                  <p className="text-[9px] text-white/40 text-center">Puedes continuar al siguiente paso</p>
                 </div>
               );
               
@@ -764,8 +764,8 @@ const Calculator = () => {
                     "flex items-center justify-between p-4 border transition-all",
                     extrasSubtotal > 0 ? "border-primary/20 bg-primary/[0.03]" : "border-white/5 bg-white/[0.01]"
                   )}>
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Extras seleccionados:</span>
-                    <span className={cn("text-sm font-black italic transition-all", extrasSubtotal > 0 ? "text-primary" : "text-white/10")}>
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/60">Extras seleccionados:</span>
+                    <span className={cn("text-sm font-black italic transition-all", extrasSubtotal > 0 ? "text-primary" : "text-white/40")}>
                       {extrasSubtotal > 0 ? `+${extrasSubtotal.toLocaleString()}€` : '—'}
                     </span>
                   </div>
@@ -817,7 +817,7 @@ const Calculator = () => {
                 </div>
                 <div className="p-5 bg-primary/[0.03] border border-primary/10 flex gap-5 items-center">
                   <ShieldCheck className="w-5 h-5 text-primary/60 shrink-0" />
-                  <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · <span className="text-primary">Conscugar</span> Sagunto</p>
+                  <p className="text-[9px] text-white/40 uppercase font-bold tracking-widest leading-relaxed">Privacidad Protegida · <span className="text-primary">Conscugar</span> Sagunto</p>
                 </div>
               </div>
             )}
@@ -854,7 +854,7 @@ const Calculator = () => {
                     >
                       {animatedTotal.toLocaleString()}€
                     </motion.h2>
-                    <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-4">
+                    <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-4">
                       Rango estimado: {budget.min.toLocaleString()}€ — {budget.max.toLocaleString()}€
                     </p>
                   </div>
@@ -879,7 +879,7 @@ const Calculator = () => {
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-tight text-white/60">{item.label};
                           </p>
-                          <p className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{item.sub}</p>
+                          <p className="text-[8px] text-white/40 font-bold uppercase tracking-widest">{item.sub}</p>
                         </div>
                         <span className="text-[11px] font-black text-white/80 tabular-nums">{item.value.toLocaleString()}€</span>
                       </motion.div>
@@ -890,7 +890,7 @@ const Calculator = () => {
                 {/* Desglose de Extras si existen */}
                 {data.selectedExtras.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Servicios Adicionales Incluidos:</p>
+                    <p className="text-[9px] font-black text-white/60 uppercase tracking-[0.3em]">Servicios Adicionales Incluidos:</p>
                     <div className="flex flex-wrap gap-2">
                       {config.extras.filter(e => data.selectedExtras.includes(e.id)).map(extra => (
                         <span key={extra.id} className="bg-white/5 border border-white/5 px-3 py-1.5 text-[9px] font-bold uppercase text-white/70 italic">
@@ -949,7 +949,7 @@ const Calculator = () => {
 
         {/* Footer Nav */}
         <div className="mt-6 pt-6 border-t border-white/[0.03] flex items-center justify-between">
-          <button onClick={prevStep} className={cn("text-[10px] font-black uppercase tracking-widest transition-all p-4", step === 1 || step === 7 ? "invisible" : "text-white/10 hover:text-white/40")}>ATRÁS</button>
+          <button onClick={prevStep} className={cn("text-[10px] font-black uppercase tracking-widest transition-all p-4", step === 1 || step === 7 ? "invisible" : "text-white/40 hover:text-white")}>ATRÁS</button>
           {step < 6 ? (
             <Button onClick={nextStep} disabled={
               (step === 1 && !data.tipo) ||
@@ -976,7 +976,7 @@ const Calculator = () => {
               setVisitRequested(false);
               localStorage.removeItem('ccg_step');
               localStorage.removeItem('ccg_data');
-            }} className="text-[10px] font-black uppercase tracking-widest text-white/10 hover:text-white transition-all p-4">NUEVO CÁLCULO</button>
+            }} className="text-[10px] font-black uppercase tracking-widest text-white/45 hover:text-white transition-all p-4">NUEVO CÁLCULO</button>
           )}
         </div>
       </div>

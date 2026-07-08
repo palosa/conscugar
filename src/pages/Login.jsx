@@ -64,7 +64,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@conscugar.es"
-                    className="w-full bg-white/5 border border-white/10 p-5 pl-12 text-sm focus:border-primary outline-none transition-all placeholder:text-white/10"
+                    className="w-full bg-white/5 border border-white/10 p-5 pl-12 text-sm focus:border-primary outline-none transition-all placeholder:text-white/35"
                   />
                 </div>
               </div>
@@ -79,7 +79,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 p-5 pl-12 text-sm focus:border-primary outline-none transition-all placeholder:text-white/10"
+                    className="w-full bg-white/5 border border-white/10 p-5 pl-12 text-sm focus:border-primary outline-none transition-all placeholder:text-white/35"
                   />
                 </div>
               </div>
