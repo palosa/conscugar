@@ -41,7 +41,7 @@ const Process = () => {
   return (
     <section 
       ref={containerRef}
-      className="py-32 bg-dark relative overflow-hidden" 
+      className="py-16 md:py-32 bg-dark relative overflow-hidden" 
       id="servicios" 
       aria-labelledby="process-heading"
     >

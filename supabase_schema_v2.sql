@@ -59,7 +59,8 @@ INSERT INTO housing_settings (id, label, multiplier, icon) VALUES
 INSERT INTO global_settings (key, value, description) VALUES
 ('price_margin', '0.15', 'Margen de error para el presupuesto (±15%)'),
 ('iva_rate', '0.21', 'Tipo de IVA aplicable (21%)'),
-('currency_symbol', '€', 'Símbolo de la moneda');
+('currency_symbol', '€', 'Símbolo de la moneda'),
+('contact_phone', '34600000000', 'Número de WhatsApp y llamadas (sin símbolos, ej: 34600000000)');
 
 -- 3. Tablas de Precios y Extras (Estructura y Datos Semilla)
 

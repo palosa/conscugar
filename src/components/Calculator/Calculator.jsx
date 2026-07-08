@@ -18,7 +18,8 @@ import {
   Phone,
   Loader2,
   CheckCircle2,
-  Download
+  Download,
+  MessageCircle
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { calculateBudget } from '../../constants/pricing';
@@ -262,6 +263,37 @@ const Calculator = () => {
     }
   };
 
+  const handleWhatsAppSend = () => {
+    const phoneSetting = config.globalSettings?.find(s => s.key === 'contact_phone');
+    const contactPhone = phoneSetting ? phoneSetting.value : '34600000000';
+
+    const projectTypeLabel = config.projectTypes.find(p => p.id === data.tipo)?.name || data.tipo;
+    const qualityLabel = config.qualitySettings.find(q => q.id === data.calidad)?.label || data.calidad;
+    const housingLabel = config.housingSettings.find(h => h.id === data.vivienda)?.label || data.vivienda;
+    const selectedExtrasList = config.extras
+      .filter(e => data.selectedExtras.includes(e.id))
+      .map(e => `+ ${e.name}`)
+      .join('\n');
+
+    const formattedBudgetMin = budget.min.toLocaleString();
+    const formattedBudgetMax = budget.max.toLocaleString();
+
+    let text = `¡Hola Conscugar! Acabo de calcular un presupuesto estimado en vuestra web para mi proyecto:\n\n`;
+    text += `*Tipo:* ${projectTypeLabel}\n`;
+    text += `*Superficie:* ${data.m2} m²\n`;
+    text += `*Calidad:* ${qualityLabel}\n`;
+    text += `*Vivienda:* ${housingLabel}\n`;
+    if (selectedExtrasList) {
+      text += `*Servicios Adicionales:*\n${selectedExtrasList}\n`;
+    }
+    text += `\n*Valoración Estimada:* Entre ${formattedBudgetMin} € y ${formattedBudgetMax} € (IVA incluido).\n\n`;
+    text += `Me gustaría que me contactarais para concretar los detalles y agendar una visita técnica. Mi nombre es ${data.name || ''}.`;
+
+    const encodedText = encodeURIComponent(text);
+    const whatsappUrl = `https://wa.me/${contactPhone}?text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const generatePDF = () => {
     const doc = new jsPDF();
     const now = new Date().toLocaleDateString();
@@ -491,7 +523,7 @@ const Calculator = () => {
           >
             {step === 1 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {config.projectTypes.map(type => {
+                  {config.projectTypes.map(type => {
                   const Icon = ICON_MAP[type.icon] || HomeIcon;
                   const isActive = data.tipo === type.id;
                   return (
@@ -534,7 +566,7 @@ const Calculator = () => {
                         </div>
                       </div>
                     </motion.div>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -871,17 +903,23 @@ const Calculator = () => {
 
                 <div className="min-h-[120px] flex items-center justify-center">
                   {!visitRequested ? (
-                    <div className="w-full flex flex-col sm:flex-row gap-3 animate-in fade-in duration-500">
+                    <div className="w-full flex flex-col gap-3.5 animate-in fade-in duration-500 max-w-md mx-auto">
                       <Button
-                        className="flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] shadow-xl shadow-primary/20"
+                        className="w-full py-6 uppercase font-black tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20"
                         onClick={() => setVisitRequested(true)}
                       >
-                        SOLICITAR VISITA TÉCNICA GRATUITA
+                        Solicitar Visita Técnica Gratuita
+                      </Button>
+                      <Button
+                        onClick={handleWhatsAppSend}
+                        className="w-full py-6 uppercase font-black tracking-[0.2em] text-[11px] bg-[#25D366] hover:bg-[#20ba5a] text-dark border-none transition-all shadow-lg hover:shadow-[#25D366]/20 flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle className="w-4 h-4 stroke-[2.5px]" /> Enviar Presupuesto por WhatsApp
                       </Button>
                       <Button
                         variant="outline"
                         className={cn(
-                          "flex-1 py-8 uppercase font-black tracking-[0.3em] text-[11px] transition-all bg-white/[0.02]",
+                          "w-full py-6 uppercase font-black tracking-[0.2em] text-[11px] transition-all bg-white/[0.02]",
                           pdfDownloaded
                             ? "border-primary/50 text-primary shadow-[0_0_20px_rgba(245,197,24,0.15)]"
                             : "border-white/20 text-white hover:border-primary hover:text-primary"
@@ -889,9 +927,9 @@ const Calculator = () => {
                         onClick={generatePDF}
                       >
                         {pdfDownloaded ? (
-                          <><CheckCircle2 className="w-5 h-5 mr-3" /> PDF DESCARGADO</>
+                          <><CheckCircle2 className="w-4 h-4 mr-2" /> PDF Descargado</>
                         ) : (
-                          <><Download className="w-5 h-5 mr-3 opacity-90" /> DESCARGAR VALORACIÓN PDF</>
+                          <><Download className="w-4 h-4 mr-2 opacity-90" /> Descargar Presupuesto PDF</>
                         )}
                       </Button>
                     </div>

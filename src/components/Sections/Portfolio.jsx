@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, MapPin, Calendar, ChevronRight, ChevronLeft, ArrowRight, Images
@@ -10,6 +10,78 @@ import bathroomImg from '../../assets/bathroom.png';
 import livingImg from '../../assets/living-room.png';
 import livingV2 from '../../assets/living-v2.png';
 import kitchenV2 from '../../assets/kitchen-v2.png';
+
+const BeforeAfterSlider = ({ before, after }) => {
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const containerRef = useRef(null);
+
+  const handleMove = (clientX) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPosition(percentage);
+  };
+
+  const handleMouseMove = (e) => {
+    handleMove(e.clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches[0]) {
+      handleMove(e.touches[0].clientX);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      setSliderPosition(p => Math.max(0, p - 5));
+    } else if (e.key === 'ArrowRight') {
+      setSliderPosition(p => Math.min(100, p + 5));
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onTouchMove={handleTouchMove}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="slider"
+      aria-valuenow={Math.round(sliderPosition)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label="Deslizador comparativo de antes y después"
+      className="relative w-full h-[300px] sm:h-[420px] lg:h-full min-h-[300px] overflow-hidden select-none cursor-ew-resize bg-black focus:outline focus:outline-2 focus:outline-primary touch-pan-y"
+    >
+      {/* Después (Fondo) */}
+      <img src={after} alt="Después" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+
+      {/* Antes (Recortada) */}
+      <div
+        className="absolute inset-y-0 left-0 w-full overflow-hidden pointer-events-none"
+        style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
+      >
+        <img src={before} alt="Antes" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      </div>
+
+      {/* Separador */}
+      <div
+        className="absolute inset-y-0 w-[2px] bg-primary pointer-events-none flex items-center justify-center"
+        style={{ left: `${sliderPosition}%` }}
+      >
+        <div className="w-8 h-8 rounded-full bg-primary text-dark flex items-center justify-center shadow-[0_0_15px_rgba(245,197,24,0.5)] border border-dark font-black text-xs select-none">
+          ↔
+        </div>
+      </div>
+
+      {/* Etiquetas */}
+      <span className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 text-[9px] font-black uppercase text-white tracking-widest border border-white/10 z-10">Antes</span>
+      <span className="absolute bottom-4 right-4 bg-primary text-dark px-3 py-1 text-[9px] font-black uppercase tracking-widest z-10">Después</span>
+    </div>
+  );
+};
 
 const projects = [
   { 
@@ -78,17 +150,20 @@ const Portfolio = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [hoveredGallery, setHoveredGallery] = useState({}); // { projectId: imageIndex }
+  const [modalMode, setModalMode] = useState('slider'); // 'slider' | 'gallery'
+
 
   const openProject = (project) => {
     setSelectedProject(project);
     setActiveImageIdx(0);
+    setModalMode('slider');
   };
 
   return (
     <section
       id="portfolio"
       aria-labelledby="portfolio-heading"
-      className="bg-dark pt-32 pb-40 overflow-hidden w-full relative z-10"
+      className={cn("bg-dark pt-16 pb-20 md:pt-32 md:pb-40 overflow-hidden w-full relative transition-all", selectedProject ? "z-[9999]" : "z-10")}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -231,98 +306,136 @@ const Portfolio = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-12 overflow-y-auto bg-dark/95 backdrop-blur-3xl"
+              className="fixed inset-0 z-[9999] flex justify-center items-start sm:items-center p-4 sm:p-12 overflow-y-auto bg-dark/95 backdrop-blur-3xl"
               onClick={() => setSelectedProject(null)}
             >
+              {/* Botón Cerrar (Fijo en pantalla) */}
+              <button
+                type="button"
+                aria-label="Cerrar detalle del proyecto"
+                onClick={() => setSelectedProject(null)}
+                className="fixed top-4 right-4 z-[10000] w-12 h-12 bg-black/80 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-primary hover:text-dark transition-all shadow-lg active:scale-95"
+              >
+                <X className="w-6 h-6" aria-hidden="true" />
+              </button>
+
               <motion.div
                 initial={{ y: 30, opacity: 0, scale: 0.98 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: 20, opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="relative w-full max-w-6xl flex flex-col lg:flex-row bg-dark-lighter border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
-                onClick={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               >
-                {/* Botón Cerrar */}
-                <button
-                  type="button"
-                  aria-label="Cerrar detalle del proyecto"
-                  onClick={() => setSelectedProject(null)}
-                  className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/60 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:text-dark transition-all"
-                >
-                  <X className="w-5 h-5" aria-hidden="true" />
-                </button>
+
                 {/* Gallery panel */}
-                <div className="w-full lg:w-3/5 flex flex-col">
-                  <div className="relative h-[300px] sm:h-[420px] lg:h-full min-h-[300px] bg-black overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={activeImageIdx}
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.6 }}
-                        src={selectedProject.gallery[activeImageIdx]}
-                        alt={`${selectedProject.title}, foto ${activeImageIdx + 1} de ${selectedProject.gallery.length}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </AnimatePresence>
-
-                    {selectedProject.gallery.length > 1 && (
-                      <>
-                        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4 pointer-events-none">
-                          <button
-                            type="button"
-                            aria-label="Foto anterior"
-                            onClick={e => { e.stopPropagation(); setActiveImageIdx(p => p === 0 ? selectedProject.gallery.length - 1 : p - 1); }}
-                            className="w-10 h-10 bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white pointer-events-auto hover:bg-primary hover:text-dark transition-all"
-                          >
-                            <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Foto siguiente"
-                            onClick={e => { e.stopPropagation(); setActiveImageIdx(p => p === selectedProject.gallery.length - 1 ? 0 : p + 1); }}
-                            className="w-10 h-10 bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white pointer-events-auto hover:bg-primary hover:text-dark transition-all"
-                          >
-                            <ChevronRight className="w-5 h-5" aria-hidden="true" />
-                          </button>
-                        </div>
-
-                        {/* Dots */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2" role="tablist" aria-label="Fotos del proyecto">
-                          {selectedProject.gallery.map((_, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              role="tab"
-                              aria-selected={i === activeImageIdx}
-                              aria-label={`Foto ${i + 1}`}
-                              onClick={e => { e.stopPropagation(); setActiveImageIdx(i); }}
-                              className={cn("h-1.5 rounded-full transition-all duration-300", i === activeImageIdx ? "bg-primary w-8" : "bg-white/30 w-1.5 hover:bg-white/60")}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Thumbnail strip in modal */}
+                <div className="w-full lg:w-3/5 flex flex-col h-[300px] sm:h-[420px] lg:h-auto border-b lg:border-b-0 lg:border-r border-white/5 bg-black shrink-0">
+                  {/* Selector de modo Slider / Galería */}
                   {selectedProject.gallery.length > 1 && (
-                    <div className="flex h-20 border-t border-white/5">
-                      {selectedProject.gallery.map((img, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          aria-label={`Ver foto ${i + 1}`}
-                          aria-pressed={activeImageIdx === i}
-                          onClick={e => { e.stopPropagation(); setActiveImageIdx(i); }}
-                          className={cn("flex-1 overflow-hidden border-b-2 transition-all", activeImageIdx === i ? "border-primary" : "border-transparent opacity-50 hover:opacity-80")}
-                        >
-                          <img src={img} alt="" aria-hidden="true" className="w-full h-full object-cover" />
-                        </button>
-                      ))}
+                    <div className="flex bg-[#0d0d0d] border-b border-white/5 p-2 gap-2 justify-center z-10 shrink-0">
+                      <button
+                        onClick={() => setModalMode('slider')}
+                        className={cn(
+                          "px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
+                          modalMode === 'slider'
+                            ? "bg-primary text-dark"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        Antes / Después
+                      </button>
+                      <button
+                        onClick={() => setModalMode('gallery')}
+                        className={cn(
+                          "px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
+                          modalMode === 'gallery'
+                            ? "bg-primary text-dark"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        Galería
+                      </button>
                     </div>
                   )}
+
+                  <div className="relative flex-1 min-h-[300px] sm:min-h-[350px] overflow-hidden flex flex-col">
+                    {modalMode === 'slider' && selectedProject.gallery.length > 1 ? (
+                      <BeforeAfterSlider before={selectedProject.gallery[1]} after={selectedProject.gallery[0]} />
+                    ) : (
+                      <div className="relative flex-1 bg-black overflow-hidden flex flex-col justify-between">
+                        <div className="relative flex-1 min-h-[300px] overflow-hidden">
+                          <AnimatePresence mode="wait">
+                            <motion.img
+                              key={activeImageIdx}
+                              initial={{ opacity: 0, scale: 1.05 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ duration: 0.6 }}
+                              src={selectedProject.gallery[activeImageIdx]}
+                              alt={`${selectedProject.title}, foto ${activeImageIdx + 1} de ${selectedProject.gallery.length}`}
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          </AnimatePresence>
+
+                          {selectedProject.gallery.length > 1 && (
+                            <>
+                              <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4 pointer-events-none z-10">
+                                <button
+                                  type="button"
+                                  aria-label="Foto anterior"
+                                  onClick={e => { e.stopPropagation(); setActiveImageIdx(p => p === 0 ? selectedProject.gallery.length - 1 : p - 1); }}
+                                  className="w-10 h-10 bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white pointer-events-auto hover:bg-primary hover:text-dark transition-all"
+                                >
+                                  <ChevronLeft className="w-5 h-5" aria-hidden="true" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label="Foto siguiente"
+                                  onClick={e => { e.stopPropagation(); setActiveImageIdx(p => p === selectedProject.gallery.length - 1 ? 0 : p + 1); }}
+                                  className="w-10 h-10 bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white pointer-events-auto hover:bg-primary hover:text-dark transition-all"
+                                >
+                                  <ChevronRight className="w-5 h-5" aria-hidden="true" />
+                                </button>
+                              </div>
+
+                              {/* Dots */}
+                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" role="tablist" aria-label="Fotos del proyecto">
+                                {selectedProject.gallery.map((_, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={i === activeImageIdx}
+                                    aria-label={`Foto ${i + 1}`}
+                                    onClick={e => { e.stopPropagation(); setActiveImageIdx(i); }}
+                                    className={cn("h-1.5 rounded-full transition-all duration-300", i === activeImageIdx ? "bg-primary w-8" : "bg-white/30 w-1.5 hover:bg-white/60")}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Thumbnail strip in modal */}
+                        {selectedProject.gallery.length > 1 && (
+                          <div className="flex h-20 border-t border-white/5 bg-black shrink-0">
+                            {selectedProject.gallery.map((img, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                aria-label={`Ver foto ${i + 1}`}
+                                aria-pressed={activeImageIdx === i}
+                                onClick={e => { e.stopPropagation(); setActiveImageIdx(i); }}
+                                className={cn("flex-1 overflow-hidden border-r border-white/5 transition-all border-b-2", activeImageIdx === i ? "border-primary opacity-100" : "border-transparent opacity-50 hover:opacity-80")}
+                              >
+                                <img src={img} alt="" aria-hidden="true" className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info panel */}

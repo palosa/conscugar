@@ -13,7 +13,7 @@ const About = () => {
     <section
       id="nosotros"
       aria-labelledby="about-heading"
-      className="py-32 bg-dark relative overflow-hidden"
+      className="py-16 md:py-32 bg-dark relative overflow-hidden"
     >
       {/* Decorative background elements */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-72 h-72 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />

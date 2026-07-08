@@ -63,7 +63,7 @@ const Testimonials = () => {
   return (
     <section 
       ref={containerRef}
-      className="py-32 bg-black/40 relative overflow-hidden" 
+      className="py-16 md:py-32 bg-black/40 relative overflow-hidden" 
       id="testimonios" 
       aria-labelledby="testimonials-heading"
     >

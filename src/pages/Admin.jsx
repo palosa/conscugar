@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell
+  BarChart, Bar, Cell, PieChart, Pie, Legend
 } from 'recharts';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -504,25 +504,39 @@ const Admin = () => {
                   )}
                 </div>
 
-                {/* Bar Chart - Distribución por Obra */}
+                {/* Pie Chart - Distribución de Demanda */}
                 <div className="bg-white/[0.02] border border-white/5 p-6 space-y-6">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Distribución</p>
-                    <p className="text-sm font-black uppercase text-white/60 italic">Por tipo de obra</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Tipos de Obra</p>
+                    <p className="text-sm font-black uppercase text-white/60 italic">Distribución de demanda</p>
                   </div>
                   {distData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={distData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
-                        <XAxis type="number" tick={{ fontSize: 8, fill: '#ffffff30', fontWeight: 900 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 8, fill: '#ffffff40', fontWeight: 900 }} width={80} />
+                      <PieChart>
+                        <Pie
+                          data={distData}
+                          cx="50%"
+                          cy="45%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="count"
+                        >
+                          {distData.map((entry, index) => {
+                            const COLORS = ['#F5C518', '#f5c518c0', '#f5c51890', '#f5c51860', '#f5c51830', '#f5c51815'];
+                            return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                          })}
+                        </Pie>
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="count" name="Leads" radius={[0, 2, 2, 0]}>
-                          {distData.map((_, i) => (
-                            <Cell key={i} fill={i === 0 ? '#F5C518' : '#F5C51830'} />
-                          ))}
-                        </Bar>
-                      </BarChart>
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36} 
+                          iconSize={8}
+                          formatter={(value) => (
+                            <span className="text-[9px] font-black uppercase tracking-widest text-white/60 ml-1">{value}</span>
+                          )}
+                        />
+                      </PieChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[220px] flex items-center justify-center">
@@ -733,15 +747,15 @@ const Admin = () => {
               <div className="space-y-4">
                 {filteredLeads.map(lead => (
                   <div key={lead.id} className="glass-card p-6 border border-white/5 hover:border-primary/20 transition-all space-y-5">
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex gap-4 items-center">
-                        <div className="w-12 h-12 bg-primary/10 border border-primary/20 flex items-center justify-center font-black text-primary uppercase text-lg">{lead.name?.[0]}</div>
-                        <div>
-                          <h3 className="text-lg font-black uppercase tracking-tight text-white">{lead.name}</h3>
-                          <p className="text-xs text-white/40">{lead.email} · <span className="text-primary font-bold">{lead.phone}</span></p>
+                        <div className="w-12 h-12 bg-primary/10 border border-primary/20 flex items-center justify-center font-black text-primary uppercase text-lg shrink-0">{lead.name?.[0]}</div>
+                        <div className="min-w-0">
+                          <h3 className="text-lg font-black uppercase tracking-tight text-white truncate">{lead.name}</h3>
+                          <p className="text-xs text-white/40 truncate">{lead.email} · <span className="text-primary font-bold">{lead.phone}</span></p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{new Date(lead.created_at).toLocaleDateString()}</p>
                         <p className="text-3xl font-black text-primary italic leading-none mt-1">{lead.estimated_total?.toLocaleString()}€</p>
                       </div>
