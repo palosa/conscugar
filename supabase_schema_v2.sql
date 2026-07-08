@@ -131,6 +131,26 @@ INSERT INTO testimonials (name, location, text, rating, is_google, approved) VAL
 ('Elena García', 'Gilet', 'Reformamos nuestra casa de montaña con ellos. El equipo técnico entiende perfectamente el entorno y los materiales. Superaron expectativas.', 5, false, true),
 ('Marc Sanchis', 'Centro Histórico, Sagunto', 'Gestionar una rehabilitación en el centro de Sagunto daba miedo por los permisos, pero ellos se encargaron de todo. Una joya.', 5, false, true);
 
+-- 4.1 Tabla de Leads (Presupuestos solicitados por clientes)
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  project_type TEXT REFERENCES project_types(id),
+  m2 NUMERIC NOT NULL,
+  calidad TEXT REFERENCES quality_settings(id),
+  vivienda TEXT REFERENCES housing_settings(id),
+  selected_extras TEXT[] DEFAULT '{}',
+  has_elevator BOOLEAN,
+  property_age TEXT,
+  estimated_total NUMERIC NOT NULL,
+  breakdown JSONB,
+  status TEXT DEFAULT 'nuevo',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- 5. Seguridad y Políticas de Acceso (RLS) para Testimonios
 ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
 

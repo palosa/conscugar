@@ -235,20 +235,22 @@ const Calculator = () => {
     setSubmitting(true);
     const budget = calculateBudget(data, config);
     try {
-      await supabase.from('leads').insert([{
+      const { error } = await supabase.from('leads').insert([{
         name: data.name,
         email: data.email,
         phone: data.phone,
-        tipo: data.tipo,
+        project_type: data.tipo,
         m2: data.m2,
         calidad: data.calidad,
         vivienda: data.vivienda,
         selected_extras: data.selectedExtras,
         has_elevator: data.hasElevator,
         property_age: data.propertyAge,
-        total_budget: budget.total,
+        estimated_total: budget.total,
         breakdown: budget.breakdown
       }]);
+
+      if (error) throw error;
 
       // DISPARADOR PARA RESEND (MODO PREPARACIÓN)
       await sendLeadNotifications(data, budget);
@@ -257,6 +259,7 @@ const Calculator = () => {
       localStorage.removeItem('ccg_step');
       localStorage.removeItem('ccg_data');
     } catch (err) {
+      console.error("Error saving lead to Supabase:", err);
       setStep(7);
     } finally {
       setSubmitting(false);
