@@ -29,13 +29,24 @@ function ScrollAndMetaManager() {
       ogUrlEl.setAttribute('content', currentUrl);
     }
 
+    // Asegurar que og:image apunte al origen absoluto exacto del host activo (Vercel o dominio definitivo)
+    const ogImageEl = document.querySelector('meta[property="og:image"]');
+    const ogImageSecureEl = document.querySelector('meta[property="og:image:secure_url"]');
+    const twitterImageEl = document.querySelector('meta[name="twitter:image"]');
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      const absoluteOgImage = `${window.location.origin}/og-image.jpg`;
+      if (ogImageEl) ogImageEl.setAttribute('content', absoluteOgImage);
+      if (ogImageSecureEl) ogImageSecureEl.setAttribute('content', absoluteOgImage);
+      if (twitterImageEl) twitterImageEl.setAttribute('content', absoluteOgImage);
+    }
+
     if (robotsEl) {
       const isPrivateRoute = pathname.startsWith('/admin') || pathname.startsWith('/login');
       robotsEl.setAttribute('content', isPrivateRoute ? 'noindex, nofollow' : 'index, follow, max-image-preview:large');
     }
 
     if (pathname === '/') {
-      document.title = 'Conscugar | Reformas Integrales y Construcción en Sagunto y Valencia — Calculadora Online';
+      document.title = 'Conscugar | Reformas y Construcción en Sagunto y Valencia';
     } else if (pathname === '/login') {
       document.title = 'Acceso Administración | Conscugar';
     } else if (pathname === '/admin') {
