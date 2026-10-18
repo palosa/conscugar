@@ -77,7 +77,7 @@ const Home = () => {
 
       <main>
         <ScrollSequenceCover />
-        <Hero />
+        <Hero phone={phone} />
         <Process />
         <About />
         <Portfolio />

@@ -776,6 +776,11 @@ const Admin = () => {
                                 ★ Solicita Visita Técnica
                               </span>
                             )}
+                            {lead.breakdown?.directContact && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                                Trato Directo (Sin Calculadora)
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs sm:text-sm text-stone-300 truncate">
                             <a href={`mailto:${lead.email}`} className="hover:text-white underline decoration-white/30">
@@ -793,10 +798,19 @@ const Admin = () => {
                           {new Date(lead.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
                         <p className="text-2xl sm:text-3xl font-extrabold text-orange-400 leading-none mt-1 tabular-nums">
-                          {lead.estimated_total?.toLocaleString('es-ES')} €
+                          {lead.breakdown?.directContact ? 'A valorar en visita' : `${lead.estimated_total?.toLocaleString('es-ES')} €`}
                         </p>
                       </div>
                     </div>
+
+                    {lead.breakdown?.clientNote && (
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-xs text-amber-100">
+                        <span className="font-bold text-amber-300 uppercase text-[10px] tracking-wider block mb-0.5">
+                          Mensaje directo del cliente:
+                        </span>
+                        {lead.breakdown.clientNote}
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-y border-white/10 bg-[#141210] rounded-xl px-4">
                       {[

@@ -28,9 +28,24 @@ export const calculateExtraPrice = (extra, data = {}) => {
   if (extra.price_type === 'm2') {
     price *= safeM2;
   } else {
-    // Escalado técnico suave para instalaciones generales en viviendas grandes (>90 m²)
-    const isBanoOrCocina = tipo.includes('bano') || tipo.includes('baño') || tipo.includes('cocina');
-    if (!isBanoOrCocina && safeM2 > 90) {
+    // Ajuste técnico de Aparejador según alcance de la estancia:
+    // Las tarifas fijas base están referenciadas a una vivienda estándar (~85 m²).
+    // En un solo baño o una sola cocina, las partidas de demolición, fontanería o electricidad se ajustan al ámbito de esa estancia.
+    const isBano = tipo.includes('bano') || tipo.includes('baño');
+    const isCocina = tipo.includes('cocina');
+
+    if (isBano) {
+      const banoScale = safeM2 <= 6 ? 0.38 : Math.min(0.6, 0.38 + (safeM2 - 6) * 0.025);
+      price *= banoScale;
+    } else if (isCocina) {
+      const cocinaScale = safeM2 <= 12 ? 0.52 : Math.min(0.75, 0.52 + (safeM2 - 12) * 0.02);
+      price *= cocinaScale;
+    } else if (safeM2 < 60) {
+      // Vivienda compacta / estudio (<60 m²)
+      const smallScale = Math.max(0.72, 0.72 + (safeM2 / 60) * 0.28);
+      price *= smallScale;
+    } else if (safeM2 > 90) {
+      // Escalado progresivo para viviendas grandes (>90 m²)
       const volumeScale = 1 + Math.min(1.5, (safeM2 - 90) * 0.0075);
       price *= volumeScale;
     }

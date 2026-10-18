@@ -1,10 +1,28 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Clock, FileCheck2, MapPin, ArrowUpRight } from 'lucide-react';
+import {
+  ShieldCheck,
+  Clock,
+  FileCheck2,
+  MapPin,
+  ArrowUpRight,
+  MessageCircle,
+  Phone,
+  CalendarCheck,
+} from 'lucide-react';
 import Calculator from '../Calculator/Calculator';
 import livingImg from '../../assets/living-room.webp';
 
-export const Hero = () => {
+export const Hero = ({ phone = '34600000000' }) => {
+  const handleOpenDirectContact = () => {
+    window.dispatchEvent(new CustomEvent('conscugar:open-direct-contact'));
+    const calcEl = document.getElementById('calculadora');
+    if (calcEl) {
+      const top = calcEl.getBoundingClientRect().top + window.scrollY - 88;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
+  };
+
   return (
     <section
       aria-labelledby="hero-heading"
@@ -12,13 +30,13 @@ export const Hero = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
         
-        {/* COLUMNA IZQUIERDA: PROPUESTA DE VALOR, AUTORIDAD ARQUITECTÓNICA & CRO */}
-        <div className="lg:col-span-5 space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left pt-2 lg:pt-6 relative">
+        {/* COLUMNA IZQUIERDA: PROPUESTA DE VALOR, CAPTACIÓN DIRECTA & AUTORIDAD */}
+        <div className="lg:col-span-5 space-y-5 flex flex-col items-center lg:items-start text-center lg:text-left pt-2 lg:pt-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 w-full"
+            className="space-y-5 w-full"
           >
             {/* Cota técnica superior + Geolocalización */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
@@ -27,24 +45,70 @@ export const Hero = () => {
                 <span>Sagunto · Puerto de Sagunto · Valencia</span>
               </div>
               <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-md bg-orange-950/[0.06] text-[11px] font-mono font-semibold text-primary-dark">
-                CTE · IVE 2026
+                Estudio Técnico Propio
               </span>
             </div>
 
             <h1
               id="hero-heading"
-              className="text-4xl sm:text-5xl lg:text-[3.35rem] font-outfit font-extrabold tracking-tight text-stone-900 leading-[1.07]"
+              className="text-4xl sm:text-5xl lg:text-[3.2rem] font-outfit font-extrabold tracking-tight text-stone-900 leading-[1.08]"
             >
-              Reformas y construcción con{' '}
-              <span className="text-primary">presupuesto real en 60 segundos.</span>
+              Calcula tu reforma en 60 segundos o{' '}
+              <span className="text-primary">habla directo con nuestro aparejador.</span>
             </h1>
 
             <p className="max-w-xl text-base sm:text-lg text-stone-600 font-normal leading-relaxed mx-auto lg:mx-0">
-              Calcula al instante cuánto cuesta tu reforma integral, baño, cocina, rehabilitación u obra nueva desde <strong className="text-stone-900 font-semibold">1 m² sin mínimos</strong>. Desglose técnico transparente con mano de obra, materiales, tasas municipales (ICIO) e IVA.
+              Obtén una valoración orientativa al instante desde <strong className="text-stone-900 font-semibold">1 m²</strong> con nuestra calculadora online, o si prefieres no rellenar pasos, <strong>contáctanos directamente</strong> y vamos a ver y medir tu vivienda gratis.
             </p>
 
+            {/* TARJETA LIMPIA DE CONTACTO DIRECTO (Sin usar la calculadora) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm text-left space-y-3.5 w-full">
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-primary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+                  ¿Prefieres no usar la calculadora?
+                </span>
+                <p className="text-sm font-bold text-stone-900">
+                  Habla directamente con nuestro aparejador (visita y medición gratuitas)
+                </p>
+                <p className="text-xs text-stone-500 leading-relaxed">
+                  Si no sabes los metros exactos o prefieres trato directo desde el primer minuto, escríbenos o pídenos que te llamemos:
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleOpenDirectContact}
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  <CalendarCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>Pedir llamada / visita gratis</span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`https://wa.me/${phone}?text=${encodeURIComponent('Hola Conscugar, prefiero hablar directamente con vosotros para pedir presupuesto de reforma.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true" />
+                    <span>WhatsApp</span>
+                  </a>
+                  <a
+                    href={`tel:+${phone}`}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#F7F5F0] hover:bg-stone-200/70 border border-stone-200 text-stone-800 text-xs font-bold transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>Llamar</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
             {/* Puntos de Confianza y Garantía Contractual (CRO) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-left w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left w-full">
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-stone-200/90 shadow-sm">
                 <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
@@ -61,7 +125,7 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Tarjeta de Obra Real Entregada (Prueba Social Visual en lugar de WebGL artificial) */}
+            {/* Tarjeta de Obra Real Entregada */}
             <a
               href="#portfolio"
               className="group flex items-center gap-4 p-3 rounded-2xl bg-white border border-stone-200/90 hover:border-primary/40 shadow-sm hover:shadow-md transition-all text-left w-full"
@@ -91,7 +155,7 @@ export const Hero = () => {
             </a>
 
             {/* Social Proof Local */}
-            <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-xs text-stone-600 font-medium">
+            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-xs text-stone-600 font-medium">
               <div className="flex items-center gap-1.5">
                 <span className="text-amber-600 font-extrabold text-sm">★★★★★ 4.9/5</span>
                 <span className="text-stone-700 font-semibold">Valoración media en Sagunto y Valencia</span>
@@ -120,5 +184,3 @@ export const Hero = () => {
 };
 
 export default Hero;
-
-
