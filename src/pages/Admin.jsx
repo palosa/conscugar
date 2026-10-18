@@ -345,7 +345,7 @@ const Admin = () => {
 
   const monthlyData = getMonthlyData(leads);
   const distData = getProjectDistribution(leads);
-  const activeLeads = leads.filter(l => !l.status || l.status === 'nuevo' || l.status === 'contactado');
+  const activeLeads = leads.filter(l => !l.status || l.status === 'nuevo' || l.status === 'visita_solicitada' || l.status === 'contactado');
   const wonLeads = leads.filter(l => l.status === 'cerrado');
   const lostLeads = leads.filter(l => l.status === 'perdido');
 
@@ -368,7 +368,7 @@ const Admin = () => {
   ];
 
   return (
-    <div className="flex bg-dark min-h-screen text-white font-outfit relative">
+    <div className="flex bg-[#141210] min-h-screen text-white font-outfit relative">
 
       {/* Mobile Backdrop */}
       {isMenuOpen && (
@@ -377,63 +377,66 @@ const Admin = () => {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 bg-[#080808] border-r border-white/5 flex flex-col z-[70] transition-transform duration-500 lg:relative lg:translate-x-0 lg:z-0",
+        "fixed inset-y-0 left-0 w-64 bg-[#0C0A09] border-r border-white/10 flex flex-col z-[70] transition-transform duration-500 lg:relative lg:translate-x-0 lg:z-0",
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-8 border-b border-white/5 flex items-center justify-between">
-          <span className="text-xl font-black tracking-tighter uppercase italic">Con<span className="text-primary">scugar</span> <span className="text-[10px] bg-primary text-dark px-2 py-1 ml-2 not-italic font-black">ADM</span></span>
-          <button onClick={() => setIsMenuOpen(false)} className="lg:hidden text-white/30 hover:text-white"><X className="w-5 h-5" /></button>
+        <div className="p-8 border-b border-white/10 flex items-center justify-between">
+          <span className="text-xl font-black tracking-tight uppercase text-white">
+            CONS<span className="text-primary">CUGAR</span>{' '}
+            <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded ml-1.5 font-extrabold">ADM</span>
+          </span>
+          <button onClick={() => setIsMenuOpen(false)} className="lg:hidden text-stone-400 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 mt-6">
+        <nav className="flex-1 p-4 space-y-1.5 mt-4">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setIsMenuOpen(false); }}
               className={cn(
-                "w-full flex items-center gap-4 px-5 py-4 text-[10px] font-black uppercase tracking-widest transition-all group rounded-none",
+                "w-full flex items-center gap-3.5 px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-all group rounded-xl",
                 activeTab === tab.id
-                  ? "bg-primary text-dark"
-                  : "text-white/30 hover:text-white hover:bg-white/5"
+                  ? "bg-primary text-white shadow-md"
+                  : "text-stone-400 hover:text-white hover:bg-white/5"
               )}
             >
-              <tab.icon className={cn("w-4 h-4 shrink-0", activeTab === tab.id ? "text-dark" : "text-primary")} />
+              <tab.icon className={cn("w-4 h-4 shrink-0", activeTab === tab.id ? "text-white" : "text-primary")} />
               {tab.label}
             </button>
           ))}
         </nav>
 
-        <div className="p-6 border-t border-white/5 space-y-4">
+        <div className="p-6 border-t border-white/10 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Sistema Activo</span>
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Sistema Activo</span>
           </div>
-          <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-400 transition-colors">
+          <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-dark flex flex-col min-h-screen">
+      <main className="flex-1 overflow-y-auto bg-[#141210] flex flex-col min-h-screen">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between p-6 border-b border-white/5 bg-black/40 backdrop-blur-md sticky top-0 z-50">
+        <header className="lg:hidden flex items-center justify-between p-5 border-b border-white/10 bg-[#0C0A09]/90 backdrop-blur-md sticky top-0 z-50">
           <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2"><Menu className="w-6 h-6 text-primary" /></button>
-          <span className="text-sm font-black uppercase tracking-tighter italic">C S G <span className="text-primary">ADM</span></span>
+          <span className="text-sm font-black uppercase tracking-tight text-white">CONSCUGAR <span className="text-primary">ADM</span></span>
           <div className="w-6" />
         </header>
 
-        <div className="p-6 sm:p-10 max-w-7xl w-full mx-auto space-y-10">
+        <div className="p-6 sm:p-10 max-w-7xl w-full mx-auto space-y-8">
 
           {/* Header row */}
           <div className="flex justify-between items-center">
             <div>
-              <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] block mb-1">{TABS.find(t => t.id === activeTab)?.label}</span>
-              <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">
+              <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em] block mb-1">{TABS.find(t => t.id === activeTab)?.label}</span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                 {activeTab === 'dashboard' ? 'Centro de Mando' : TABS.find(t => t.id === activeTab)?.label}
               </h1>
             </div>
-            <Button variant="ghost" onClick={fetchAllData} className="text-white/20 hover:text-white text-xs">
+            <Button variant="ghost" onClick={fetchAllData} className="text-stone-300 hover:text-white border border-white/10 bg-white/5 hover:bg-white/10 text-xs rounded-xl">
               <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} /> Sincronizar
             </Button>
           </div>
@@ -445,20 +448,20 @@ const Admin = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: 'Leads Activos', value: activeLeads.length, icon: Users, suffix: '', sub: `${leads.length} leads totales`, up: true },
-                  { label: 'Pipeline Activo', value: totalVolume.toLocaleString(), icon: Euro, suffix: '€', sub: 'En negociación', up: true },
-                  { label: 'Ventas Cerradas', value: wonVolume.toLocaleString(), icon: TrendingUp, suffix: '€', sub: `${wonLeads.length} obras ganadas`, up: wonVolume > 0 },
+                  { label: 'Pipeline Activo', value: totalVolume.toLocaleString('es-ES'), icon: Euro, suffix: '€', sub: 'En negociación', up: true },
+                  { label: 'Ventas Cerradas', value: wonVolume.toLocaleString('es-ES'), icon: TrendingUp, suffix: '€', sub: `${wonLeads.length} obras ganadas`, up: wonVolume > 0 },
                   { label: 'Tasa de Conversión', value: conversionRate.toString(), icon: BarChart3, suffix: '%', sub: 'Éxito en cierres', up: conversionRate > 50 },
                 ].map((kpi, i) => (
-                  <div key={i} className="bg-white/[0.03] border border-white/5 p-6 relative overflow-hidden group hover:border-primary/20 transition-all">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-primary/30" />
+                  <div key={i} className="bg-[#1E1B18] border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-primary/40 transition-all">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                     <div className="flex justify-between items-start mb-4">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-white/30">{kpi.label}</p>
-                      <kpi.icon className="w-4 h-4 text-primary/40" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{kpi.label}</p>
+                      <kpi.icon className="w-4 h-4 text-primary" />
                     </div>
-                    <p className="text-3xl font-black italic text-white leading-none mb-2">{kpi.value}<span className="text-primary text-xl ml-1">{kpi.suffix}</span></p>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-white leading-none mb-2 tabular-nums">{kpi.value}<span className="text-primary text-xl ml-1">{kpi.suffix}</span></p>
                     <div className="flex items-center gap-2">
-                      {kpi.up ? <ArrowUpRight className="w-3 h-3 text-emerald-400" /> : <ArrowDownRight className="w-3 h-3 text-red-400" />}
-                      <p className="text-[9px] text-white/20 font-bold uppercase">{kpi.sub}</p>
+                      {kpi.up ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDownRight className="w-3.5 h-3.5 text-amber-400" />}
+                      <p className="text-[11px] text-stone-400 font-semibold">{kpi.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -467,48 +470,48 @@ const Admin = () => {
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Area Chart - Evolución */}
-                <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-6 space-y-6">
+                <div className="lg:col-span-2 bg-[#1E1B18] border border-white/10 rounded-2xl p-6 space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-primary">Evolución Mensual</p>
-                      <p className="text-sm font-black uppercase text-white/60 italic">Leads & Volumen económico</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Evolución Mensual</p>
+                      <p className="text-sm font-bold text-stone-200">Leads y volumen económico</p>
                     </div>
-                    <Activity className="w-5 h-5 text-primary/30" />
+                    <Activity className="w-5 h-5 text-primary" />
                   </div>
                   {monthlyData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={220}>
                       <AreaChart data={monthlyData}>
                         <defs>
                           <linearGradient id="gradVolume" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#F5C518" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#F5C518" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#C2410C" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#C2410C" stopOpacity={0} />
                           </linearGradient>
                           <linearGradient id="gradLeads" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#ffffff" stopOpacity={0.08} />
+                            <stop offset="5%" stopColor="#ffffff" stopOpacity={0.12} />
                             <stop offset="95%" stopColor="#ffffff" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                        <XAxis dataKey="month" tick={{ fontSize: 8, fill: '#ffffff30', fontWeight: 900 }} />
-                        <YAxis yAxisId="left" tick={{ fontSize: 8, fill: '#F5C51880', fontWeight: 900 }} />
-                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 8, fill: '#ffffff30', fontWeight: 900 }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff12" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#a8a29e', fontWeight: 700 }} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#fb923c', fontWeight: 700 }} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#a8a29e', fontWeight: 700 }} />
                         <Tooltip content={<CustomTooltip />} />
-                        <Area yAxisId="left" type="monotone" dataKey="volume" name="Volumen €" stroke="#F5C518" strokeWidth={2} fill="url(#gradVolume)" />
-                        <Area yAxisId="right" type="monotone" dataKey="leads" name="Leads" stroke="#ffffff40" strokeWidth={1} fill="url(#gradLeads)" />
+                        <Area yAxisId="left" type="monotone" dataKey="volume" name="Volumen €" stroke="#EA580C" strokeWidth={2} fill="url(#gradVolume)" />
+                        <Area yAxisId="right" type="monotone" dataKey="leads" name="Leads" stroke="#d6d3d1" strokeWidth={1.5} fill="url(#gradLeads)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[220px] flex items-center justify-center">
-                      <p className="text-white/10 text-xs font-black uppercase tracking-widest">Sin datos aún</p>
+                      <p className="text-stone-400 text-xs font-bold uppercase tracking-widest">Sin datos aún</p>
                     </div>
                   )}
                 </div>
 
                 {/* Pie Chart - Distribución de Demanda */}
-                <div className="bg-white/[0.02] border border-white/5 p-6 space-y-6">
+                <div className="bg-[#1E1B18] border border-white/10 rounded-2xl p-6 space-y-6">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Tipos de Obra</p>
-                    <p className="text-sm font-black uppercase text-white/60 italic">Distribución de demanda</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Tipos de Obra</p>
+                    <p className="text-sm font-bold text-stone-200">Distribución de demanda</p>
                   </div>
                   {distData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={220}>
@@ -523,7 +526,7 @@ const Admin = () => {
                           dataKey="count"
                         >
                           {distData.map((entry, index) => {
-                            const COLORS = ['#F5C518', '#f5c518c0', '#f5c51890', '#f5c51860', '#f5c51830', '#f5c51815'];
+                            const COLORS = ['#EA580C', '#F59E0B', '#10B981', '#3B82F6', '#A855F7', '#78716C'];
                             return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
                           })}
                         </Pie>
@@ -533,14 +536,14 @@ const Admin = () => {
                           height={36} 
                           iconSize={8}
                           formatter={(value) => (
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/60 ml-1">{value}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300 ml-1">{value}</span>
                           )}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[220px] flex items-center justify-center">
-                      <p className="text-white/10 text-xs font-black uppercase tracking-widest">Sin datos aún</p>
+                      <p className="text-stone-400 text-xs font-bold uppercase tracking-widest">Sin datos aún</p>
                     </div>
                   )}
                 </div>
@@ -550,45 +553,48 @@ const Admin = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Recent Leads mini table */}
-                <div className="bg-white/[0.02] border border-white/5 p-6 space-y-4">
+                <div className="bg-[#1E1B18] border border-white/10 rounded-2xl p-6 space-y-4">
                   <div className="flex justify-between items-center">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Leads Recientes</p>
-                    <button onClick={() => setActiveTab('leads')} className="text-[9px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-widest flex items-center gap-1">Ver todos <ChevronRight className="w-3 h-3" /></button>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Leads Recientes</p>
+                    <button onClick={() => setActiveTab('leads')} className="text-[11px] font-bold text-stone-300 hover:text-primary transition-all uppercase tracking-wider flex items-center gap-1">Ver todos <ChevronRight className="w-3.5 h-3.5" /></button>
                   </div>
                   <div className="space-y-2">
                     {leads.slice(0, 5).map(l => (
-                      <div key={l.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 group">
+                      <div key={l.id} className="flex items-center justify-between py-3 border-b border-white/10 last:border-0 group">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black">{l.name?.[0]}</div>
+                          <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center text-orange-400 text-xs font-extrabold uppercase">{l.name?.[0]}</div>
                           <div>
-                            <p className="text-xs font-black text-white uppercase">{l.name}</p>
-                            <p className="text-[9px] text-white/30">{l.project_type?.replace(/_/g,' ')} · {l.m2}m²</p>
+                            <p className="text-xs font-bold text-white">{l.name}</p>
+                            <p className="text-[11px] text-stone-400 capitalize">{l.project_type?.replace(/_/g,' ')} · {l.m2} m²</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-black text-primary italic">{l.estimated_total?.toLocaleString()}€</p>
-                          <p className="text-[9px] text-white/20">{new Date(l.created_at).toLocaleDateString()}</p>
+                          <p className="text-sm font-extrabold text-orange-400 tabular-nums">{l.estimated_total?.toLocaleString('es-ES')} €</p>
+                          <p className="text-[10px] text-stone-400">{new Date(l.created_at).toLocaleDateString('es-ES')}</p>
                         </div>
                       </div>
                     ))}
+                    {leads.length === 0 && (
+                      <p className="text-xs text-stone-400 py-8 text-center">No hay leads registrados todavía.</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Simulador Técnico de Presupuestos */}
-                <div className="bg-white/[0.02] border border-white/5 p-6 space-y-6">
+                <div className="bg-[#1E1B18] border border-white/10 rounded-2xl p-6 space-y-6">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Prueba de Configuración</p>
-                    <h3 className="text-sm font-black uppercase italic text-white/60">Simulador de Tarifas</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Prueba de Configuración</p>
+                    <h3 className="text-sm font-bold text-stone-200">Simulador de Tarifas</h3>
                   </div>
                   
                   {/* Formulario rápido */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Obra</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Obra</label>
                       <select 
                         value={simData.tipo}
                         onChange={e => setSimData(prev => ({ ...prev, tipo: e.target.value }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary"
                       >
                         {projectTypes.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
@@ -597,21 +603,21 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Superficie (m²)</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Superficie (m²)</label>
                       <input 
                         type="number"
                         value={simData.m2}
-                        onChange={e => setSimData(prev => ({ ...prev, m2: Math.max(1, Number(e.target.value) || 0) }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white outline-none focus:border-primary"
+                        onChange={e => setSimData(prev => ({ ...prev, m2: Math.max(1, Math.round(Number(e.target.value) || 0)) }))}
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Calidad</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Calidad</label>
                       <select 
                         value={simData.calidad}
                         onChange={e => setSimData(prev => ({ ...prev, calidad: e.target.value }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary"
                       >
                         {qualitySettings.map(q => (
                           <option key={q.id} value={q.id}>{q.label}</option>
@@ -620,11 +626,11 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Vivienda</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Vivienda</label>
                       <select 
                         value={simData.vivienda}
                         onChange={e => setSimData(prev => ({ ...prev, vivienda: e.target.value }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary"
                       >
                         {housingSettings.map(h => (
                           <option key={h.id} value={h.id}>{h.label}</option>
@@ -633,12 +639,12 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Ascensor</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Ascensor</label>
                       <select 
                         value={simData.hasElevator === true ? 'true' : 'false'}
                         disabled={simData.vivienda !== 'piso'}
                         onChange={e => setSimData(prev => ({ ...prev, hasElevator: e.target.value === 'true' }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary disabled:opacity-30"
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary disabled:opacity-30"
                       >
                         <option value="true">Sí (Con Ascensor)</option>
                         <option value="false">No (Sin Ascensor)</option>
@@ -646,11 +652,11 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/20 uppercase">Antigüedad</label>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase">Antigüedad</label>
                       <select 
                         value={simData.propertyAge}
                         onChange={e => setSimData(prev => ({ ...prev, propertyAge: e.target.value }))}
-                        className="w-full bg-dark border border-white/5 p-2 text-[10px] font-black text-white uppercase outline-none focus:border-primary"
+                        className="w-full bg-[#141210] border border-white/15 rounded-lg p-2.5 text-xs font-bold text-white outline-none focus:border-primary"
                       >
                         <option value="post_2000">Posterior a 2000</option>
                         <option value="1970_2000">Entre 1970 y 2000</option>
@@ -663,33 +669,33 @@ const Admin = () => {
                   {(() => {
                     const configData = { projectTypes, pricingRanges: pricing, extras, qualitySettings, housingSettings, globalSettings };
                     const budget = calculateBudget(simData, configData);
-                    if (!budget) return <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest text-center py-4">Faltan datos de cálculo</p>;
+                    if (!budget) return <p className="text-xs text-stone-400 font-bold uppercase tracking-widest text-center py-4">Faltan datos de cálculo</p>;
                     return (
-                      <div className="p-4 bg-black/40 border border-white/10 space-y-4">
-                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                          <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">Valoración con I.V.A. ({budget.breakdown.ivaPercent}%)</span>
-                          <span className="text-xl font-black italic text-primary">{budget.total.toLocaleString()} €</span>
+                      <div className="p-4 rounded-xl bg-[#141210] border border-white/10 space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                          <span className="text-[10px] font-bold text-stone-300 uppercase tracking-wider">Valoración con I.V.A. ({budget.breakdown.ivaPercent}%)</span>
+                          <span className="text-xl font-extrabold text-orange-400 tabular-nums">{budget.total.toLocaleString('es-ES')} €</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[9px] font-bold text-white/60">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs font-semibold text-stone-300">
                           <div className="flex justify-between">
                             <span>P.E.M. Base:</span>
-                            <span className="text-white">{budget.breakdown.pem.toLocaleString()} €</span>
+                            <span className="text-white font-bold tabular-nums">{budget.breakdown.pem.toLocaleString('es-ES')} €</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Mano de obra:</span>
-                            <span className="text-white">{budget.breakdown.labor.toLocaleString()} €</span>
+                            <span className="text-white font-bold tabular-nums">{budget.breakdown.labor.toLocaleString('es-ES')} €</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Tasa / ICIO (4%):</span>
-                            <span className="text-white">{budget.breakdown.icio.toLocaleString()} €</span>
+                            <span className="text-white font-bold tabular-nums">{budget.breakdown.icio.toLocaleString('es-ES')} €</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Contingencias (5%):</span>
-                            <span className="text-white">{budget.breakdown.contingency.toLocaleString()} €</span>
+                            <span className="text-white font-bold tabular-nums">{budget.breakdown.contingency.toLocaleString('es-ES')} €</span>
                           </div>
-                          <div className="flex justify-between col-span-2 pt-2 border-t border-white/5">
+                          <div className="flex justify-between col-span-2 pt-2 border-t border-white/10">
                             <span>Precio base proyectado:</span>
-                            <span className="text-primary italic font-black">{budget.breakdown.pricePerM2.toLocaleString()} €/m²</span>
+                            <span className="text-orange-400 font-extrabold tabular-nums">{budget.breakdown.pricePerM2.toLocaleString('es-ES')} €/m²</span>
                           </div>
                         </div>
                       </div>
@@ -700,111 +706,153 @@ const Admin = () => {
             </div>
           )}
 
-          {/* ═══════════════ LEADS TAB ═══════════════ */}
+          {/* ═══════════════ LEADS TAB (CRM LEADS) ═══════════════ */}
           {activeTab === 'leads' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex gap-4 flex-1 w-full">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
                   <input
-                    placeholder="Buscar por nombre, email o móvil..."
+                    placeholder="Buscar por nombre, email o teléfono..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="flex-1 bg-white/5 border border-white/5 p-4 text-xs font-black uppercase tracking-widest outline-none focus:border-primary/40"
+                    className="flex-1 bg-[#1E1B18] border border-white/15 rounded-xl p-3.5 text-xs font-semibold text-white placeholder:text-stone-400 outline-none focus:border-primary"
                   />
                   <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    className="bg-white/5 border border-white/5 p-4 text-[10px] font-black uppercase tracking-widest outline-none"
+                    className="bg-[#1E1B18] border border-white/15 rounded-xl p-3.5 text-xs font-bold text-white uppercase tracking-wider outline-none focus:border-primary"
                   >
-                    <option value="all">Todos</option>
+                    <option value="all">Todos los estados</option>
                     <option value="nuevo">Nuevos</option>
+                    <option value="visita_solicitada">Visita Solicitada</option>
                     <option value="contactado">Contactados</option>
                     <option value="cerrado">Cerrados</option>
                     <option value="perdido">Perdidos</option>
                   </select>
                 </div>
-                <Button variant="outline" onClick={exportLeads} className="whitespace-nowrap px-8 py-4 border-white/10 hover:border-primary text-xs font-black tracking-widest">
-                  <FileText className="w-4 h-4 mr-2" /> CSV
+                <Button
+                  variant="primary"
+                  onClick={exportLeads}
+                  className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 text-xs font-bold rounded-xl"
+                >
+                  <FileText className="w-4 h-4 mr-2" /> Exportar CSV
                 </Button>
               </div>
 
               {/* Summary KPIs */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { label: 'Registros', value: filteredLeads.length, color: 'text-white' },
-                  { label: 'Potencial', value: `${filteredLeads.reduce((a, c) => a + (c.estimated_total || 0), 0).toLocaleString()}€`, color: 'text-primary' },
-                  { label: 'Ticket Medio', value: `${filteredLeads.length > 0 ? Math.round(filteredLeads.reduce((a, c) => a + (c.estimated_total || 0), 0) / filteredLeads.length).toLocaleString() : 0}€`, color: 'text-white' },
+                  { label: 'Registros Filtrados', value: filteredLeads.length, color: 'text-white' },
+                  { label: 'Volumen Potencial', value: `${filteredLeads.reduce((a, c) => a + (c.estimated_total || 0), 0).toLocaleString('es-ES')} €`, color: 'text-orange-400' },
+                  { label: 'Ticket Medio', value: `${filteredLeads.length > 0 ? Math.round(filteredLeads.reduce((a, c) => a + (c.estimated_total || 0), 0) / filteredLeads.length).toLocaleString('es-ES') : 0} €`, color: 'text-white' },
                 ].map((s, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 p-5 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
-                    <p className="text-[9px] font-black uppercase text-white/20">{s.label}</p>
-                    <p className={cn("text-2xl font-black italic mt-1", s.color)}>{s.value}</p>
+                  <div key={i} className="bg-[#1E1B18] border border-white/10 rounded-2xl p-5 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{s.label}</p>
+                    <p className={cn("text-2xl font-extrabold mt-1 tabular-nums", s.color)}>{s.value}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Lead Cards */}
+              {/* Lead Cards (Fondo oscuro #1E1B18 con texto blanco 100% legible, en lugar de .glass-card blanco) */}
               <div className="space-y-4">
                 {filteredLeads.map(lead => (
-                  <div key={lead.id} className="glass-card p-6 border border-white/5 hover:border-primary/20 transition-all space-y-5">
+                  <div
+                    key={lead.id}
+                    className="bg-[#1E1B18] border border-white/15 rounded-2xl p-6 hover:border-primary/50 transition-all space-y-5 shadow-lg"
+                  >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex gap-4 items-center">
-                        <div className="w-12 h-12 bg-primary/10 border border-primary/20 flex items-center justify-center font-black text-primary uppercase text-lg shrink-0">{lead.name?.[0]}</div>
-                        <div className="min-w-0">
-                          <h3 className="text-lg font-black uppercase tracking-tight text-white truncate">{lead.name}</h3>
-                          <p className="text-xs text-white/40 truncate">{lead.email} · <span className="text-primary font-bold">{lead.phone}</span></p>
+                        <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center font-extrabold text-orange-400 uppercase text-lg shrink-0">
+                          {lead.name?.[0] || 'C'}
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-extrabold tracking-tight text-white truncate">
+                              {lead.name}
+                            </h3>
+                            {lead.status === 'visita_solicitada' && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                                ★ Solicita Visita Técnica
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm text-stone-300 truncate">
+                            <a href={`mailto:${lead.email}`} className="hover:text-white underline decoration-white/30">
+                              {lead.email}
+                            </a>
+                            {' · '}
+                            <a href={`tel:${lead.phone}`} className="text-orange-400 font-bold hover:underline">
+                              {lead.phone}
+                            </a>
+                          </p>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{new Date(lead.created_at).toLocaleDateString()}</p>
-                        <p className="text-3xl font-black text-primary italic leading-none mt-1">{lead.estimated_total?.toLocaleString()}€</p>
+                      <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 border-white/10 pt-3 sm:pt-0">
+                        <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+                          {new Date(lead.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                        <p className="text-2xl sm:text-3xl font-extrabold text-orange-400 leading-none mt-1 tabular-nums">
+                          {lead.estimated_total?.toLocaleString('es-ES')} €
+                        </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-6 py-4 border-y border-white/5 bg-white/[0.02] px-4 -mx-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-y border-white/10 bg-[#141210] rounded-xl px-4">
                       {[
-                        ['Proyecto', lead.project_type?.replace(/_/g, ' ')],
-                        ['Superficie', `${lead.m2} m²`],
-                        ['Vivienda', lead.vivienda],
+                        ['Tipo de Obra', lead.project_type?.replace(/_/g, ' ') || '—'],
+                        ['Superficie', `${lead.m2 || 0} m²`],
+                        ['Inmueble', lead.vivienda || '—'],
+                        ['Calidad', lead.calidad || 'media'],
                       ].map(([k, v]) => (
                         <div key={k} className="space-y-1">
-                          <p className="text-[9px] font-black uppercase text-white/20 tracking-widest">{k}</p>
-                          <p className="text-xs font-bold uppercase text-white/80">{v}</p>
+                          <p className="text-[10px] font-bold uppercase text-stone-400 tracking-wider">{k}</p>
+                          <p className="text-xs sm:text-sm font-extrabold uppercase text-white">{v}</p>
                         </div>
                       ))}
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Notas internas</p>
+                      <p className="text-[10px] font-bold text-stone-300 uppercase tracking-wider">
+                        Notas internas y seguimiento comercial
+                      </p>
                       <textarea
                         defaultValue={lead.notes || ''}
                         onBlur={e => handleUpdate('leads', lead.id, 'notes', e.target.value)}
-                        placeholder="Seguimiento comercial..."
-                        className="w-full bg-dark/50 border border-white/5 p-3 text-xs h-20 outline-none focus:border-primary/40 transition-all resize-none"
+                        placeholder="Añade notas de la llamada, dirección de visita o acuerdos con el cliente..."
+                        className="w-full bg-[#141210] border border-white/15 rounded-xl p-3.5 text-xs text-white placeholder:text-stone-500 h-20 outline-none focus:border-primary transition-all resize-none"
                       />
                     </div>
 
-                    <div className="flex justify-between items-center">
-                      <select
-                        value={lead.status || 'nuevo'}
-                        onChange={e => handleUpdate('leads', lead.id, 'status', e.target.value)}
-                        className="bg-black/40 border border-white/10 p-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-primary"
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Estado:</span>
+                        <select
+                          value={lead.status || 'nuevo'}
+                          onChange={e => handleUpdate('leads', lead.id, 'status', e.target.value)}
+                          className="bg-[#141210] border border-white/20 rounded-xl px-3.5 py-2 text-xs font-bold text-white uppercase tracking-wider outline-none focus:border-primary"
+                        >
+                          <option value="nuevo">Nuevo</option>
+                          <option value="visita_solicitada">Visita Solicitada</option>
+                          <option value="contactado">Contactado</option>
+                          <option value="cerrado">Cerrado (Ganado)</option>
+                          <option value="perdido">Perdido</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => handleDelete('leads', lead.id)}
+                        className="text-stone-400 hover:text-red-400 transition-all p-2 rounded-lg hover:bg-red-500/10"
+                        title="Eliminar lead"
                       >
-                        <option value="nuevo">Nuevo</option>
-                        <option value="contactado">Contactado</option>
-                        <option value="cerrado">Cerrado</option>
-                        <option value="perdido">Perdido</option>
-                      </select>
-                      <button onClick={() => handleDelete('leads', lead.id)} className="text-white/10 hover:text-red-500 transition-all p-2">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ))}
                 {filteredLeads.length === 0 && (
-                  <div className="text-center py-20 border border-white/5">
-                    <Users className="w-10 h-10 text-white/10 mx-auto mb-4" />
-                    <p className="text-white/20 text-xs font-black uppercase tracking-widest">Sin leads que coincidan</p>
+                  <div className="text-center py-20 rounded-2xl bg-[#1E1B18] border border-white/10">
+                    <Users className="w-10 h-10 text-stone-500 mx-auto mb-3" />
+                    <p className="text-stone-300 text-xs font-bold uppercase tracking-widest">Sin leads que coincidan con el filtro</p>
                   </div>
                 )}
               </div>

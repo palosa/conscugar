@@ -1,37 +1,61 @@
-/**
- * SERVICIO DE NOTIFICACIONES CONSCUGAR (PREPARED FOR RESEND)
- * 
- * Este servicio está listo para integrarse con Resend.com.
- * El método recomendado es llamar a una Edge Function de Supabase para no exponer la API Key en el cliente.
- */
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
+/**
+ * SERVICIO DE NOTIFICACIONES Y WEBHOOKS CONSCUGAR 2026
+ * Soporta:
+ * 1. Webhook directo a n8n / Make (si se define VITE_WEBHOOK_URL en el entorno)
+ * 2. Supabase Edge Function 'resend-notification' (si se define VITE_ENABLE_EDGE_EMAIL='true')
+ */
 export const sendLeadNotifications = async (leadData, budget) => {
-  console.log("🔔 [Notificaciones] Preparando envío para Resend...", { leadData, total: budget.total });
+  const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+  const enableEdgeEmail = import.meta.env.VITE_ENABLE_EDGE_EMAIL === 'true';
+
+  const payload = {
+    source: 'conscugar_web_2026',
+    timestamp: new Date().toISOString(),
+    lead: {
+      name: leadData.name,
+      email: leadData.email,
+      phone: leadData.phone,
+      projectType: leadData.tipo,
+      m2: Math.round(Number(leadData.m2) || 0),
+      calidad: leadData.calidad,
+      vivienda: leadData.vivienda,
+      selectedExtras: leadData.selectedExtras || [],
+      visitRequested: Boolean(leadData.visitRequested),
+    },
+    budget: {
+      total: budget?.total || 0,
+      min: budget?.min || 0,
+      max: budget?.max || 0,
+      breakdown: budget?.breakdown || {},
+    },
+  };
 
   try {
-    /**
-     * PASOS PARA ACTIVAR RESEND EN EL FUTURO:
-     * 1. Crear cuenta en Resend.com
-     * 2. Crear una Supabase Edge Function (ej: 'resend-notification')
-     * 3. Descomentar el bloque inferior y configurar la URL.
-     */
+    // 1. Envío a Webhook de automatización (n8n / Make / CRM) si está configurado
+    if (webhookUrl && webhookUrl.startsWith('http')) {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
 
-    /*
-    const { data, error } = await supabase.functions.invoke('resend-notification', {
-      body: {
-        to: [leadData.email, 'admin@conscugar.es'],
-        subject: `Nuevo Presupuesto: ${leadData.name} - ${budget.total}€`,
-        lead: leadData,
-        budget: budget
-      }
-    });
-    */
+    // 2. Envío mediante Supabase Edge Function (Resend) si está habilitado
+    if (isSupabaseConfigured && enableEdgeEmail) {
+      await supabase.functions.invoke('resend-notification', {
+        body: {
+          to: [leadData.email, 'info@conscugar.es'],
+          subject: `Valoración Técnica Conscugar: ${leadData.name} (${budget?.total?.toLocaleString('es-ES')} €)`,
+          ...payload,
+        },
+      });
+    }
 
-    // Simulación de éxito para el flujo actual
-    return { success: true, message: "Simulación de Resend completada (Modo Preparación)" };
-
+    return { success: true };
   } catch (error) {
-    console.error("❌ Error en el servicio de notificaciones:", error);
+    console.error('Aviso: No se pudo disparar la notificación externa:', error);
     return { success: false, error };
   }
 };

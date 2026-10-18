@@ -12,11 +12,9 @@ const WebGLHeroObject = () => {
     if (!ctx) return;
 
     let animationFrameId;
-    let width = (canvas.width = 450);
-    let height = (canvas.height = 450);
+    let logicalSize = 450;
 
-    // Definición 3D de una "Estructura Arquitectónica 3D" (Casa/Cubo 3D estilizado)
-    // Coordenadas locales en 3D (X, Y, Z) centradas en 0,0,0
+    // Definición 3D de una "Estructura Arquitectónica BIM/CAD" (Casa/Cubo 3D estilizado con plano base)
     const nodes = [
       // Base inferior (suelo)
       { x: -1, y: -0.6, z: -1 },
@@ -31,8 +29,13 @@ const WebGLHeroObject = () => {
       // Techo en punta (Cumbrera de la casa)
       { x: 0, y: 1.1, z: -1 },
       { x: 0, y: 1.1, z: 1 },
-      // Vigas internas decorativas
-      { x: 0, y: -0.1, z: 0 }
+      // Nodo tensor central (estructura interna)
+      { x: 0, y: -0.1, z: 0 },
+      // Marcas de replanteo exteriores (plano arquitectónico en el suelo)
+      { x: -1.35, y: -0.6, z: -1.35 },
+      { x: 1.35, y: -0.6, z: -1.35 },
+      { x: 1.35, y: -0.6, z: 1.35 },
+      { x: -1.35, y: -0.6, z: 1.35 }
     ];
 
     // Conexiones de líneas entre los nodos 3D
@@ -49,35 +52,35 @@ const WebGLHeroObject = () => {
       [8, 9],
       // Estructura interna decorativa
       [0, 10], [1, 10], [2, 10], [3, 10],
-      [4, 10], [5, 10], [6, 10], [7, 10]
+      [4, 10], [5, 10], [6, 10], [7, 10],
+      // Perímetro de replanteo técnico (BIM)
+      [11, 12], [12, 13], [13, 14], [14, 11],
+      [0, 11], [1, 12], [2, 13], [3, 14]
     ];
 
-    // Generar nube de dispersión inicial para la animación de auto-ensamblaje
     const scatterOffsets = nodes.map(() => ({
-      x: (Math.random() - 0.5) * 4,
-      y: (Math.random() - 0.5) * 4,
-      z: (Math.random() - 0.5) * 4
+      x: (Math.random() - 0.5) * 3.5,
+      y: (Math.random() - 0.5) * 3.5,
+      z: (Math.random() - 0.5) * 3.5
     }));
 
-    // Variables de control de la animación
-    let progress = 0; // Ensamblaje: 0 a 1
-    let angleX = 0.3; // Rotación inicial
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let progress = prefersReducedMotion ? 1 : 0;
+    let angleX = 0.3;
     let angleY = 0.5;
-    let angleZ = 0.1;
+    const angleZ = 0.08;
 
-    // Target de rotación controlado por ratón (Parallax)
     const targetRot = { x: 0.3, y: 0.5 };
     const currentRot = { x: 0.3, y: 0.5 };
 
     const handleMouseMove = (e) => {
-      if (!containerRef.current) return;
+      if (prefersReducedMotion || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 a 0.5
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
 
-      // Asignar inclinación de destino
-      targetRot.y = 0.5 + x * 0.8;
-      targetRot.x = 0.3 - y * 0.8;
+      targetRot.y = 0.5 + x * 0.85;
+      targetRot.x = 0.3 - y * 0.85;
     };
 
     const handleMouseLeave = () => {
@@ -87,12 +90,14 @@ const WebGLHeroObject = () => {
 
     const handleResize = () => {
       if (!containerRef.current) return;
-      const size = Math.min(450, containerRef.current.clientWidth);
-      width = canvas.width = size;
-      height = canvas.height = size;
+      logicalSize = Math.min(450, containerRef.current.clientWidth || 450);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = logicalSize * dpr;
+      canvas.height = logicalSize * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
     const parent = containerRef.current;
     if (parent) {
       parent.addEventListener('mousemove', handleMouseMove, { passive: true });
@@ -101,21 +106,20 @@ const WebGLHeroObject = () => {
 
     handleResize();
 
-    // Loop de renderizado
-    const tick = () => {
-      ctx.clearRect(0, 0, width, height);
+    const renderFrame = (now = performance.now()) => {
+      ctx.clearRect(0, 0, logicalSize, logicalSize);
 
-      // Ensamblaje progresivo (lerp lento al cargar la sección)
       if (progress < 1) {
-        progress += 0.015; // Velocidad de formación
+        progress = Math.min(1, progress + 0.018);
       }
 
-      // Suavizar transición de rotación (Interpolación / LERP)
+      // Curva Expo-Out para el auto-ensamblaje arquitectónico
+      const easedProgress = progress === 1 ? 1 : 1 - Math.pow(2, -8 * progress);
+
       currentRot.x += (targetRot.x - currentRot.x) * 0.08;
       currentRot.y += (targetRot.y - currentRot.y) * 0.08;
 
-      // Auto rotación orbital muy lenta de fondo
-      angleY = currentRot.y + Date.now() * 0.00015;
+      angleY = prefersReducedMotion ? currentRot.y : currentRot.y + now * 0.00016;
       angleX = currentRot.x;
 
       const cosX = Math.cos(angleX);
@@ -125,97 +129,134 @@ const WebGLHeroObject = () => {
       const cosZ = Math.cos(angleZ);
       const sinZ = Math.sin(angleZ);
 
-      // Proyectar nodos 3D a coordenadas de pantalla 2D
       const projected = [];
-      const scale = width * 0.32; // Escala del objeto
-      const centerX = width / 2;
-      const centerY = height / 2 + 20;
+      const scale = logicalSize * 0.31;
+      const centerX = logicalSize / 2;
+      const centerY = logicalSize / 2 + 18;
 
       nodes.forEach((node, i) => {
         const offset = scatterOffsets[i];
-        // Interpola entre posición dispersa y posición final ensamblada
-        const x = node.x * progress + offset.x * (1 - progress);
-        const y = node.y * progress + offset.y * (1 - progress);
-        const z = node.z * progress + offset.z * (1 - progress);
+        const x = node.x * easedProgress + offset.x * (1 - easedProgress);
+        const y = node.y * easedProgress + offset.y * (1 - easedProgress);
+        const z = node.z * easedProgress + offset.z * (1 - easedProgress);
 
-        // Rotación en eje Y
-        let x1 = x * cosY - z * sinY;
-        let z1 = x * sinY + z * cosY;
+        const x1 = x * cosY - z * sinY;
+        const z1 = x * sinY + z * cosY;
 
-        // Rotación en eje X
-        let y2 = y * cosX - z1 * sinX;
-        let z2 = y * sinX + z1 * cosX;
+        const y2 = y * cosX - z1 * sinX;
+        const z2 = y * sinX + z1 * cosX;
 
-        // Rotación en eje Z (inclinación)
-        let x3 = x1 * cosZ - y2 * sinZ;
-        let y3 = x1 * sinZ + y2 * cosZ;
+        const x3 = x1 * cosZ - y2 * sinZ;
+        const y3 = x1 * sinZ + y2 * cosZ;
 
-        // Perspectiva simple
-        const distance = 3.5;
+        const distance = 3.6;
         const perspective = distance / (distance - z2);
 
         projected.push({
           x: x3 * scale * perspective + centerX,
-          y: -y3 * scale * perspective + centerY, // Eje Y invertido en pantalla
-          depth: z2 // Conservar profundidad para renderizado Z-Sorting si se requiere
+          y: -y3 * scale * perspective + centerY,
+          depth: z2
         });
       });
 
-      // Dibujar vigas secundarias / Líneas tenues de cuadrícula interior (Se forman progresivamente)
-      const edgeDrawLimit = Math.floor(edges.length * progress);
+      const edgeDrawLimit = Math.floor(edges.length * easedProgress);
       edges.forEach(([u, v], idx) => {
         if (idx > edgeDrawLimit) return;
 
-        // Determinar si es una viga decorativa interna o pilar principal
         const isInternal = u === 10 || v === 10;
-        ctx.lineWidth = isInternal ? 1 : 1.6; // Líneas más gruesas para la estructura principal
-        ctx.strokeStyle = isInternal 
-          ? 'rgba(255, 255, 255, 0.12)' 
-          : 'rgba(245, 197, 24, 0.45)'; // Mayor opacidad en la estructura dorada
+        const isBlueprintGrid = u >= 11 || v >= 11;
+
+        if (isBlueprintGrid) {
+          ctx.setLineDash([3, 4]);
+          ctx.lineWidth = 0.8;
+          ctx.strokeStyle = 'rgba(194, 65, 12, 0.25)';
+        } else if (isInternal) {
+          ctx.setLineDash([]);
+          ctx.lineWidth = 0.9;
+          ctx.strokeStyle = 'rgba(28, 25, 23, 0.14)';
+        } else {
+          ctx.setLineDash([]);
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = 'rgba(194, 65, 12, 0.55)';
+        }
 
         ctx.beginPath();
         ctx.moveTo(projected[u].x, projected[u].y);
         ctx.lineTo(projected[v].x, projected[v].y);
         ctx.stroke();
-      });
 
-      // Dibujar nodos (Puntos de conexión / Vértices)
-      const nodeDrawLimit = Math.floor(nodes.length * progress);
-      nodes.forEach((node, i) => {
+        // Impulsos de energía BIM viajando por las vigas principales (cuando está ensamblado)
+        if (!prefersReducedMotion && easedProgress > 0.95 && idx < 13 && idx % 3 === 0) {
+          const pulseT = ((now * 0.00045 + idx * 0.23) % 1);
+          const px = projected[u].x + (projected[v].x - projected[u].x) * pulseT;
+          const py = projected[u].y + (projected[v].y - projected[u].y) * pulseT;
+
+          ctx.beginPath();
+          ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(28, 25, 23, 0.75)';
+          ctx.fill();
+        }
+      });
+      ctx.setLineDash([]);
+
+      // Dibujar nodos sin usar ctx.shadowBlur (halo concéntrico 10x más rápido en GPU)
+      const nodeDrawLimit = Math.floor(nodes.length * easedProgress);
+      nodes.forEach((_, i) => {
         if (i > nodeDrawLimit) return;
         const proj = projected[i];
         const isCenterNode = i === 10;
+        const isOuterGrid = i >= 11;
+
+        if (isOuterGrid) {
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(194, 65, 12, 0.5)';
+          ctx.fill();
+          return;
+        }
+
+        if (!isCenterNode) {
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, 11, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(194, 65, 12, 0.12)';
+          ctx.fill();
+        }
 
         ctx.beginPath();
-        ctx.arc(proj.x, proj.y, isCenterNode ? 4.5 : 6, 0, Math.PI * 2); // Nodos más grandes
-        ctx.fillStyle = isCenterNode 
-          ? 'rgba(255, 255, 255, 0.55)' 
-          : 'rgba(245, 197, 24, 0.95)'; // Dorado Conscugar más brillante
-        
-        // Efecto resplandor en los nodos principales
-        if (!isCenterNode) {
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = '#F5C518';
-        }
+        ctx.arc(proj.x, proj.y, isCenterNode ? 3.5 : 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = isCenterNode
+          ? 'rgba(28, 25, 23, 0.55)'
+          : 'rgba(194, 65, 12, 0.95)';
         ctx.fill();
-        ctx.shadowBlur = 0; // Desactivar shadow para las líneas
       });
 
-      // Dibujar un halo de fondo circular sutil
-      ctx.beginPath();
-      const grad = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, scale * 1.5);
-      grad.addColorStop(0, 'rgba(245, 197, 24, 0.03)');
-      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = grad;
-      ctx.arc(centerX, centerY, scale * 1.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      animationFrameId = requestAnimationFrame(tick);
+      if (!prefersReducedMotion) {
+        animationFrameId = requestAnimationFrame(renderFrame);
+      }
     };
 
-    tick();
+    if (prefersReducedMotion) {
+      renderFrame();
+      return () => window.removeEventListener('resize', handleResize);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = requestAnimationFrame(renderFrame);
+        } else {
+          cancelAnimationFrame(animationFrameId);
+        }
+      },
+      { threshold: 0.05 }
+    );
+
+    if (parent) observer.observe(parent);
+    else animationFrameId = requestAnimationFrame(renderFrame);
 
     return () => {
+      observer.disconnect();
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
       if (parent) {
@@ -228,14 +269,17 @@ const WebGLHeroObject = () => {
   return (
     <div 
       ref={containerRef} 
+      aria-hidden="true"
       className="relative w-full max-w-[450px] aspect-square flex items-center justify-center pointer-events-auto"
     >
       <canvas 
         ref={canvasRef} 
-        className="w-full h-full drop-shadow-[0_0_30px_rgba(245,197,24,0.15)]"
+        aria-hidden="true"
+        className="w-full h-full"
       />
     </div>
   );
 };
 
 export default WebGLHeroObject;
+

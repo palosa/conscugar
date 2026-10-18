@@ -1,18 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Background -->
-  <rect width="512" height="512" fill="#0a0a0a"/>
+  <!-- Fondo grafito arquitectónico con bordes suavizados -->
+  <rect width="512" height="512" rx="108" fill="#1C1917"/>
   
-  <!-- Geometric construction bracket / architectural C shape -->
-  <!-- Top horizontal bar -->
-  <rect x="120" y="100" width="272" height="52" fill="#F5C518"/>
-  <!-- Bottom horizontal bar -->
-  <rect x="120" y="360" width="272" height="52" fill="#F5C518"/>
-  <!-- Left vertical bar -->
-  <rect x="120" y="100" width="52" height="312" fill="#F5C518"/>
+  <!-- Monograma arquitectónico C en piedra cálida y terracota -->
+  <rect x="116" y="104" width="280" height="54" rx="8" fill="#F7F5F0"/>
+  <rect x="116" y="354" width="280" height="54" rx="8" fill="#F7F5F0"/>
+  <rect x="116" y="104" width="54" height="304" rx="8" fill="#F7F5F0"/>
   
-  <!-- Inner dark cutout to form the C -->
-  <rect x="172" y="152" width="220" height="208" fill="#0a0a0a"/>
-  
-  <!-- Small accent square - construction marker -->
-  <rect x="340" y="234" width="52" height="44" fill="#F5C518" opacity="0.3"/>
+  <!-- Acento estructural terracota Conscugar 2026 -->
+  <rect x="292" y="226" width="104" height="60" rx="10" fill="#C2410C"/>
 </svg>

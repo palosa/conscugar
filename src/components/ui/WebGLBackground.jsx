@@ -4,6 +4,9 @@ const WebGLBackground = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
+    // Desactivar partículas continuas en pantallas móviles para maximizar batería e INP
+    if (window.innerWidth < 768) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -14,10 +17,9 @@ const WebGLBackground = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Configuración de partículas
     const particles = [];
-    const particleCount = Math.min(80, Math.floor((width * height) / 20000)); // Escala con resolución
-    const mouse = { x: null, y: null, radius: 150 };
+    const particleCount = Math.min(45, Math.floor((width * height) / 32000));
+    const mouse = { x: null, y: null, radius: 140 };
 
     class Particle {
       constructor() {
@@ -27,19 +29,17 @@ const WebGLBackground = () => {
       reset(init = false) {
         this.x = Math.random() * width;
         this.y = init ? Math.random() * height : height + 10;
-        this.size = Math.random() * 3.5 + 1.2; // Partículas ligeramente más grandes y visibles
-        this.speedX = Math.random() * 0.2 - 0.1;
-        this.speedY = -(Math.random() * 0.4 + 0.1); // Suben lentamente
-        this.opacity = Math.random() * 0.5 + 0.2; // Mayor opacidad
-        this.depth = Math.random() * 2 + 1; // Para efecto parallax con el scroll
+        this.size = Math.random() * 2.2 + 1;
+        this.speedX = Math.random() * 0.16 - 0.08;
+        this.speedY = -(Math.random() * 0.25 + 0.06);
+        this.opacity = Math.random() * 0.25 + 0.1;
+        this.depth = Math.random() * 1.5 + 0.5;
       }
 
       update(scrollOffset) {
-        // Movimiento base
         this.x += this.speedX;
-        this.y += this.speedY - scrollOffset * 0.05 * this.depth; // Movimiento parallax con el scroll
+        this.y += this.speedY - scrollOffset * 0.03 * this.depth;
 
-        // Interacción con ratón (repulsión magnética)
         if (mouse.x !== null && mouse.y !== null) {
           const dx = this.x - mouse.x;
           const dy = this.y - mouse.y;
@@ -47,12 +47,11 @@ const WebGLBackground = () => {
           if (distance < mouse.radius) {
             const force = (mouse.radius - distance) / mouse.radius;
             const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * force * 1.2;
-            this.y += Math.sin(angle) * force * 1.2;
+            this.x += Math.cos(angle) * force * 0.9;
+            this.y += Math.sin(angle) * force * 0.9;
           }
         }
 
-        // Limites de pantalla
         if (this.y < -10 || this.x < -10 || this.x > width + 10) {
           this.reset(false);
         }
@@ -61,12 +60,11 @@ const WebGLBackground = () => {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(245, 197, 24, ${this.opacity})`; // Color dorado sutil
+        ctx.fillStyle = `rgba(194, 65, 12, ${this.opacity})`; // Terracota arquitectónico sutil
         ctx.fill();
       }
     }
 
-    // Inicializar
     for (let i = 0; i < particleCount; i++) {
       particles.push(new Particle());
     }
@@ -100,31 +98,29 @@ const WebGLBackground = () => {
     window.addEventListener('mouseleave', handleMouseLeave, { passive: true });
     window.addEventListener('resize', handleResize, { passive: true });
 
-    // Loop de animación
-    const tick = () => {
-      // Fondo sutil de niebla/glow con rastro (trail) muy leve
-      ctx.fillStyle = 'rgba(8, 8, 8, 0.08)'; 
-      ctx.fillRect(0, 0, width, height);
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let isRunning = !prefersReducedMotion;
 
-      // Dibujar y actualizar partículas
+    const tick = () => {
+      if (!isRunning) return;
+      ctx.clearRect(0, 0, width, height);
+
       particles.forEach((p) => {
         p.update(scrollSpeed);
         p.draw();
       });
 
-      // Desaceleración del scroll speed
-      scrollSpeed *= 0.95;
+      scrollSpeed *= 0.92;
 
-      // Dibujar constelaciones tenues (conexiones de líneas)
-      ctx.strokeStyle = 'rgba(245, 197, 24, 0.08)'; // Líneas de conexión más visibles
-      ctx.lineWidth = 0.55;
+      ctx.strokeStyle = 'rgba(154, 52, 18, 0.06)';
+      ctx.lineWidth = 0.6;
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.hypot(dx, dy);
 
-          if (dist < 125) { // Mayor distancia de conexión
+          if (dist < 120) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
@@ -136,10 +132,23 @@ const WebGLBackground = () => {
       animationFrameId = requestAnimationFrame(tick);
     };
 
-    tick();
+    const handleVisibilityChange = () => {
+      if (document.hidden || prefersReducedMotion) {
+        isRunning = false;
+        cancelAnimationFrame(animationFrameId);
+      } else if (!isRunning) {
+        isRunning = true;
+        tick();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    if (isRunning) tick();
 
     return () => {
+      isRunning = false;
       cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
@@ -150,10 +159,12 @@ const WebGLBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-[#080808]"
-      style={{ mixBlendMode: 'screen', opacity: 0.8 }}
+      aria-hidden="true"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 hidden md:block"
+      style={{ opacity: 0.7 }}
     />
   );
 };
 
 export default WebGLBackground;
+

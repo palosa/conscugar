@@ -1,100 +1,111 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { MessageSquare, Layout, Calculator, Construction } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Calculator, Compass, FileSignature, HardHat } from 'lucide-react';
 
 const steps = [
   {
-    title: "Asesoría",
-    desc: "Definimos tus necesidades y el alcance técnico del proyecto.",
-    icon: MessageSquare,
-    color: "from-blue-500/20 to-cyan-500/0"
-  },
-  {
-    title: "Diseño & Plan",
-    desc: "Visualizamos el espacio y seleccionamos materiales de alta gama.",
-    icon: Layout,
-    color: "from-primary/20 to-yellow-500/0"
-  },
-  {
-    title: "Tech-Budget",
-    desc: "Nuestra calculadora te ofrece una aproximación del coste. Un técnico revisará tu proyecto y elaborará el presupuesto definitivo.",
+    title: "1. Cálculo Online Instantáneo",
+    desc: "Configura los metros cuadrados, calidades y partidas de tu reforma en nuestra calculadora para obtener una valoración técnica con IVA e ICIO incluidos.",
     icon: Calculator,
-    color: "from-emerald-500/20 to-teal-500/0"
+    tag: "En 60 segundos"
   },
   {
-    title: "Firma Conscugar",
-    desc: "Ejecución profesional con supervisión técnica diaria.",
-    icon: Construction,
-    color: "from-red-500/20 to-orange-500/0"
+    title: "2. Visita Técnica y Medición",
+    desc: "Un arquitecto técnico de Conscugar visita tu inmueble en Sagunto, Camp de Morvedre o Valencia sin coste para verificar instalaciones y replanteo.",
+    icon: Compass,
+    tag: "100% Gratuita"
+  },
+  {
+    title: "3. Presupuesto Cerrado y Contrato",
+    desc: "Entregamos memoria de calidades detallada por partidas, cronograma de ejecución y precio cerrado por contrato sin sobrecostes.",
+    icon: FileSignature,
+    tag: "Garantía por escrito"
+  },
+  {
+    title: "4. Ejecución y Entrega Llave en Mano",
+    desc: "Coordinación integral de todos los gremios propios, tramitación de licencias municipales, dirección facultativa y limpieza final.",
+    icon: HardHat,
+    tag: "Plazo garantizado"
   }
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.14,
+      delayChildren: 0.06,
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
 const Process = () => {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-
-  const yBg = useTransform(scrollYProgress, [0, 1], [-60, 60]);
-
   return (
     <section 
-      ref={containerRef}
-      className="py-16 md:py-32 bg-dark relative overflow-hidden" 
+      className="py-20 md:py-28 bg-white border-y border-stone-200/80 relative overflow-hidden" 
       id="servicios" 
       aria-labelledby="process-heading"
     >
-      {/* Parallax Background Layer */}
-      <motion.div 
-        style={{ y: yBg }}
-        className="absolute top-20 left-10 text-[14vw] font-black uppercase text-white/[0.035] pointer-events-none select-none tracking-widest italic leading-none"
-      >
-        METODO
-      </motion.div>
-
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center mb-24 space-y-4">
-            <span className="text-[10px] font-black tracking-[0.4em] uppercase text-primary block">La Diferencia</span>
-            <h2 id="process-heading" className="text-4xl sm:text-6xl font-outfit font-black tracking-tighter text-white uppercase italic">Nuestro Método</h2>
+        <div className="max-w-3xl mb-16 space-y-3">
+          <span className="text-xs font-extrabold tracking-widest uppercase text-primary block">Metodología Técnica Conscugar</span>
+          <h2 id="process-heading" className="text-3xl sm:text-5xl font-outfit font-extrabold tracking-tight text-stone-900">
+            De tu estimación online a la entrega de llaves, sin incertidumbre.
+          </h2>
+          <p className="text-stone-600 text-base leading-relaxed">
+            Eliminamos la opacidad de las reformas tradicionales combinando presupuestación paramétrica al instante con dirección de obra propia en Valencia y Camp de Morvedre.
+          </p>
         </div>
 
-        <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" aria-label="Pasos del proceso Conscugar">
+        <motion.ol
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-60px" }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          aria-label="Pasos del proceso Conscugar"
+        >
           {steps.map((step, idx) => (
             <motion.li
               key={idx}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className="group relative p-10 bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all duration-500"
+              variants={cardVariants}
+              className="group relative p-7 rounded-2xl bg-[#F7F5F0]/70 border border-stone-200/90 hover:border-primary/40 hover:bg-white hover:shadow-xl hover:shadow-stone-900/5 transition-all duration-300 flex flex-col justify-between"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
-              
-              <div className="relative z-10 space-y-6">
-                <div className="w-14 h-14 bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/40 group-hover:bg-primary transition-all duration-500">
-                  <step.icon className="w-6 h-6 text-primary group-hover:text-dark" />
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-stone-200 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-colors">
+                    <step.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" aria-hidden="true" />
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-orange-950/[0.06] text-primary-dark">
+                    {step.tag}
+                  </span>
                 </div>
                 
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Paso 0{idx + 1}</span>
-                  <h3 className="text-xl font-black uppercase italic">{step.title}</h3>
-                  <p className="text-sm text-white/70 leading-relaxed group-hover:text-white transition-colors font-medium">
+                <div className="space-y-2.5">
+                  <h3 className="text-lg font-bold text-stone-900">{step.title}</h3>
+                  <p className="text-sm text-stone-600 leading-relaxed">
                     {step.desc}
                   </p>
                 </div>
               </div>
-              
-              {/* Connector for Desktop */}
-              {idx < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-8 w-8 h-[1px] bg-white/5 z-0" />
-              )}
             </motion.li>
           ))}
-        </ol>
+        </motion.ol>
       </div>
     </section>
   );
 };
 
 export default Process;
+
+

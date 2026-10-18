@@ -8,17 +8,24 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#F5C518',
-          dark: '#D4A800',
+          DEFAULT: '#C2410C', // Terracota arquitectónico (orange-700)
+          dark: '#9A3412',    // Arcilla intensa (orange-800)
+          light: '#FFF7ED',   // Crema terracota suave
         },
         dark: {
-          DEFAULT: '#0A0A0A',
-          lighter: '#1A1A1A',
-          muted: '#333333',
+          DEFAULT: '#1C1917', // Grafito arquitectónico (stone-900)
+          lighter: '#F2EFE9', // Piedra caliza cálida (superficie secundaria)
+          muted: '#57534E',   // Gris piedra técnico (stone-600)
         },
+        surface: {
+          DEFAULT: '#F7F5F0', // Alabastro cálido principal
+          card: '#FFFFFF',    // Blanco puro para tarjetas
+          border: '#E6E2D8',  // Línea técnica de plano
+        }
       },
       fontFamily: {
-        outfit: ['Outfit', 'sans-serif'],
+        outfit: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        jakarta: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
         inter: ['Inter', 'sans-serif'],
       },
       backgroundImage: {
@@ -29,3 +36,4 @@ export default {
   },
   plugins: [],
 }
+

@@ -10,8 +10,8 @@ export const Button = ({
   const variants = {
     primary: "btn-primary",
     outline: "btn-outline",
-    ghost: "text-white/60 hover:text-white transition-colors",
-    secondary: "bg-white/10 text-white hover:bg-white/20 transition-all px-6 py-3 font-semibold",
+    ghost: "text-stone-600 hover:text-stone-900 transition-colors",
+    secondary: "bg-stone-200/80 text-stone-900 hover:bg-stone-300/80 transition-all px-6 py-3 font-semibold rounded-xl",
   };
 
   const sizes = {
@@ -35,3 +35,4 @@ export const Button = ({
     </button>
   );
 };
+

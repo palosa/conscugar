@@ -1,39 +1,52 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 const BackgroundOrbs = () => {
-  const [isMobile, setIsMobile] = React.useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener('resize', checkMobile, { passive: true });
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const shouldAnimate = !isMobile && !prefersReducedMotion;
+
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none select-none">
-      <motion.div 
-        animate={!isMobile ? { 
-          x: [0, 50, -30, 0], 
-          y: [0, -50, 20, 0],
-          scale: [1, 1.2, 0.9, 1]
-        } : {}}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 left-1/4 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] bg-primary/10 rounded-full blur-[80px] sm:blur-[140px] opacity-40 sm:opacity-40" 
+    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none select-none bg-[#F7F5F0]" aria-hidden="true">
+      {/* Retícula arquitectónica sutil */}
+      <div
+        className="absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, rgba(28, 25, 23, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(28, 25, 23, 0.04) 1px, transparent 1px)',
+          backgroundSize: '64px 64px'
+        }}
       />
       <motion.div 
-        animate={!isMobile ? { 
-          x: [0, -40, 60, 0], 
-          y: [0, 30, -50, 0],
-          scale: [1, 0.8, 1.1, 1]
-        } : {}}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-1/4 right-1/4 w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] bg-white/5 rounded-full blur-[70px] sm:blur-[80px] opacity-30 sm:opacity-30" 
+        animate={shouldAnimate ? { 
+          x: [0, 35, -20, 0], 
+          y: [0, -30, 15, 0],
+          scale: [1, 1.08, 0.96, 1]
+        } : false}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        className="will-change-transform absolute top-1/4 left-1/4 w-[280px] h-[280px] sm:w-[540px] sm:h-[540px] bg-orange-600/5 rounded-full blur-[90px] sm:blur-[140px]" 
       />
-      <div className="absolute inset-0 bg-dark/60 backdrop-blur-[2px] sm:backdrop-blur-[2px]" />
+      <motion.div 
+        animate={shouldAnimate ? { 
+          x: [0, -25, 40, 0], 
+          y: [0, 20, -30, 0],
+          scale: [1, 0.92, 1.05, 1]
+        } : false}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="will-change-transform absolute bottom-1/4 right-1/4 w-[240px] h-[240px] sm:w-[460px] sm:h-[460px] bg-amber-700/5 rounded-full blur-[80px] sm:blur-[120px]" 
+      />
     </div>
   );
 };
 
 export default BackgroundOrbs;
+
+

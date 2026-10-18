@@ -58,7 +58,7 @@ INSERT INTO housing_settings (id, label, multiplier, icon) VALUES
 
 INSERT INTO global_settings (key, value, description) VALUES
 ('price_margin', '0.15', 'Margen de error para el presupuesto (±15%)'),
-('iva_rate', '0.21', 'Tipo de IVA aplicable (21%)'),
+('iva_rate', '0.10', 'Tipo de IVA reducido aplicable a reformas de vivienda (10% Art. 91 LIVA)'),
 ('currency_symbol', '€', 'Símbolo de la moneda'),
 ('contact_phone', '34600000000', 'Número de WhatsApp y llamadas (sin símbolos, ej: 34600000000)');
 
@@ -91,15 +91,15 @@ CREATE TABLE IF NOT EXISTS extras (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Datos semilla para precios base (rangos de m²)
+-- Datos semilla para precios base (rangos de m² continuos sin huecos decimales)
 INSERT INTO pricing_config (project_type, range_min, range_max, price_per_m2) VALUES
 ('reforma_integral', 0, 50, 480),
-('reforma_integral', 51, 100, 420),
-('reforma_integral', 101, 99999, 390),
+('reforma_integral', 50.001, 100, 420),
+('reforma_integral', 100.001, 99999, 390),
 ('bano', 0, 8, 800),
-('bano', 9, 99999, 700),
+('bano', 8.001, 99999, 700),
 ('cocina', 0, 15, 680),
-('cocina', 16, 99999, 600),
+('cocina', 15.001, 99999, 600),
 ('obra_nueva', 0, 99999, 950),
 ('rehabilitacion', 0, 99999, 300),
 ('reforma_parcial', 0, 99999, 280);
@@ -134,17 +134,17 @@ INSERT INTO testimonials (name, location, text, rating, is_google, approved) VAL
 -- 4.1 Tabla de Leads (Presupuestos solicitados por clientes)
 CREATE TABLE IF NOT EXISTS leads (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  phone TEXT NOT NULL,
+  name TEXT NOT NULL CHECK (char_length(name) BETWEEN 2 AND 120),
+  email TEXT NOT NULL CHECK (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$' AND char_length(email) <= 254),
+  phone TEXT NOT NULL CHECK (phone ~ '^[+0-9\s]{9,20}$'),
   project_type TEXT REFERENCES project_types(id),
-  m2 NUMERIC NOT NULL,
+  m2 NUMERIC NOT NULL CHECK (m2 > 0 AND m2 <= 3000),
   calidad TEXT REFERENCES quality_settings(id),
   vivienda TEXT REFERENCES housing_settings(id),
   selected_extras TEXT[] DEFAULT '{}',
   has_elevator BOOLEAN,
   property_age TEXT,
-  estimated_total NUMERIC NOT NULL,
+  estimated_total NUMERIC NOT NULL CHECK (estimated_total >= 0),
   breakdown JSONB,
   status TEXT DEFAULT 'nuevo',
   notes TEXT,
@@ -185,8 +185,15 @@ CREATE POLICY "Permitir lectura pública de global_settings" ON global_settings 
 CREATE POLICY "Permitir lectura pública de pricing_config" ON pricing_config FOR SELECT USING (true);
 CREATE POLICY "Permitir lectura pública de extras" ON extras FOR SELECT USING (true);
 
--- Políticas de Escritura Pública para Leads (Permite a la calculadora web insertar nuevas solicitudes de contacto)
-CREATE POLICY "Permitir inserción pública de leads" ON leads FOR INSERT WITH CHECK (true);
+-- Políticas de Escritura Pública para Leads (Restringida a estado inicial y campos válidos)
+CREATE POLICY "Permitir inserción pública de leads" ON leads
+FOR INSERT TO anon
+WITH CHECK (
+  status = 'nuevo'
+  AND notes IS NULL
+  AND char_length(name) BETWEEN 2 AND 120
+  AND m2 > 0 AND m2 <= 3000
+);
 
 -- Políticas de Control Total para Administradores Autenticados (Permite editar desde la sección /admin)
 CREATE POLICY "Permitir control total de project_types a administradores" ON project_types FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -196,3 +203,23 @@ CREATE POLICY "Permitir control total de global_settings a administradores" ON g
 CREATE POLICY "Permitir control total de pricing_config a administradores" ON pricing_config FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Permitir control total de extras a administradores" ON extras FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Permitir control total de leads a administradores" ON leads FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Función RPC segura para registrar solicitud de Visita Técnica desde la calculadora pública
+-- (evita exponer permisos UPDATE directos a anon sobre la tabla leads)
+CREATE OR REPLACE FUNCTION request_technical_visit(p_lead_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE leads
+  SET status = 'visita_solicitada',
+      notes = COALESCE(notes || ' | ', '') || 'Solicitud de visita técnica gratuita desde calculadora web'
+  WHERE id = p_lead_id
+    AND status = 'nuevo';
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION request_technical_visit(UUID) TO anon, authenticated;
+

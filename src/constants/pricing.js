@@ -1,5 +1,43 @@
-// Este archivo ahora solo contiene la lógica pura de cálculo.
-// No hay constantes hardcodeadas; todo se inyecta desde la base de datos (Supabase).
+// Lógica centralizada de cálculo de presupuestos y partidas técnicas (Conscugar).
+
+/**
+ * Calcula el coste individual de un extra/partida adicional de forma consistente
+ * para toda la aplicación (Paso 5, Paso 7 y documento PDF).
+ */
+export const calculateExtraPrice = (extra, data = {}) => {
+  if (!extra) return 0;
+  const { calidad = 'media', m2 = 0, tipo = '' } = data;
+  const safeM2 = Math.max(Math.round(Number(m2) || 0), 1);
+
+  let price = Number(extra.price || 0);
+
+  if (extra.is_quality_dependent !== false) {
+    if (calidad === 'basica') {
+      price = Number(extra.price_basic || price);
+    } else if (calidad === 'media') {
+      price = Number(extra.price_medium || price);
+    } else if (calidad === 'alta') {
+      price = Number(extra.price_high || price * 1.45);
+    } else if (calidad === 'premium') {
+      price = Number(extra.price_premium || (extra.price_high ? extra.price_high * 1.35 : price * 2.1));
+    } else {
+      price = Number(extra.price_medium || price);
+    }
+  }
+
+  if (extra.price_type === 'm2') {
+    price *= safeM2;
+  } else {
+    // Escalado técnico suave para instalaciones generales en viviendas grandes (>90 m²)
+    const isBanoOrCocina = tipo.includes('bano') || tipo.includes('baño') || tipo.includes('cocina');
+    if (!isBanoOrCocina && safeM2 > 90) {
+      const volumeScale = 1 + Math.min(1.5, (safeM2 - 90) * 0.0075);
+      price *= volumeScale;
+    }
+  }
+
+  return Math.round(price);
+};
 
 /**
  * Calcula el presupuesto dinámico basado en la configuración de la base de datos.
@@ -7,145 +45,141 @@
  * @param {Object} config - Configuración completa desde Supabase
  */
 export const calculateBudget = (data, config = {}) => {
-  const { tipo, m2, calidad, vivienda, selectedExtras, hasElevator, propertyAge } = data;
-  const { 
-    projectTypes = [], 
-    pricingRanges = [], 
-    extras = [], 
-    qualitySettings = [], 
+  const { tipo, m2, calidad, vivienda, selectedExtras = [], hasElevator, propertyAge } = data;
+  const {
+    projectTypes = [],
+    pricingRanges = [],
+    extras = [],
+    qualitySettings = [],
     housingSettings = [],
-    globalSettings = [] 
+    globalSettings = []
   } = config;
-  
+
   if (!tipo || !m2 || !calidad || !vivienda) return null;
-  
-  // 1. Encontrar el Precio Base (Referencia a 80m2)
-  let baseReferencePrice = 300; 
+
+  // Superficie entera desde 1 m² sin mínimos artificiales
+  const safeM2 = Math.max(Math.round(Number(m2) || 0), 1);
+
+  // 1. Encontrar el Precio Base y determinar si existe tramo explícito en BD
+  let baseReferencePrice = 300;
   const projectType = projectTypes.find(p => p.id === tipo);
   if (projectType) {
-    baseReferencePrice = projectType.base_price_fallback || 300;
+    baseReferencePrice = Number(projectType.base_price_fallback) || 300;
   }
 
-  // Si existen rangos explícitos, los usamos como referencia. Si no, escalamos matemáticamente.
-  const range = pricingRanges.find(p => p.project_type === tipo && m2 >= p.range_min && m2 <= p.range_max);
-  if (range) {
-    baseReferencePrice = range.price_per_m2;
+  // Ordenar rangos para evitar huecos entre tramos
+  const typeRanges = pricingRanges
+    .filter(p => p.project_type === tipo)
+    .sort((a, b) => Number(a.range_min) - Number(b.range_min));
+
+  const matchedRange = typeRanges.find(
+    (p, idx) =>
+      safeM2 >= Number(p.range_min) &&
+      (safeM2 <= Number(p.range_max) ||
+        (idx < typeRanges.length - 1 && safeM2 < Number(typeRanges[idx + 1].range_min)))
+  );
+
+  let scaledPricePerM2 = baseReferencePrice;
+  if (matchedRange) {
+    // Si la tabla pricing_config ya define el tramo por m², usamos su precio directamente
+    scaledPricePerM2 = Number(matchedRange.price_per_m2);
+  } else {
+    // Curva de economía de escala solo como fallback cuando no hay tramos configurados en BD
+    let pivotM2 = 80;
+    if (tipo.includes('bano') || tipo.includes('baño')) pivotM2 = 6;
+    else if (tipo.includes('cocina')) pivotM2 = 12;
+    else if (tipo.includes('reforma_parcial')) pivotM2 = 25;
+
+    const scaleFactor = Math.max(0.75, Math.min(1.15, Math.pow(pivotM2 / safeM2, 0.10)));
+    scaledPricePerM2 = baseReferencePrice * scaleFactor;
   }
 
-  // 2. Aplicar Economía de Escala Continua (Curva de Descuento por Volumen)
-  // Pivota adaptativamente según el tipo de obra.
-  const safeM2 = Math.max(Number(m2), 5); // Evitar división por 0 o tamaños absurdos
-  let pivotM2 = 80;
-  if (tipo.includes('bano') || tipo.includes('baño')) {
-    pivotM2 = 5;
-  } else if (tipo.includes('cocina')) {
-    pivotM2 = 10;
-  } else if (tipo.includes('reforma_parcial')) {
-    pivotM2 = 45;
-  }
-  const scaleFactor = Math.max(0.65, Math.pow(pivotM2 / safeM2, 0.15)); // Freno matemático: descuento máximo 35%
-  const scaledPricePerM2 = baseReferencePrice * scaleFactor;
-
-  // Helper para leer parámetros dinámicos de global_settings
   const getGlobalSetting = (key, fallback) => {
     const s = globalSettings.find(item => item.key === key);
     return s ? Number(s.value) : fallback;
   };
 
-  // 3. Multiplicadores Físicos y de Logística
+  // 2. Multiplicadores de Calidad, Tipología y Antigüedad (CTE / Rehabilitación)
   const qSetting = qualitySettings.find(s => s.id === calidad) || { multiplier: 1.0 };
-  const hSetting = housingSettings.find(s => s.id === vivienda) || { multiplier: 1.0 };
-  
-  // Riesgos por Antigüedad
+  const hSetting =
+    tipo === 'obra_nueva'
+      ? { multiplier: 1.0 }
+      : housingSettings.find(s => s.id === vivienda) || { multiplier: 1.0 };
+
   let ageMultiplier = 1.0;
-  if (propertyAge === 'pre_1970') {
-    ageMultiplier = 1.0 + getGlobalSetting('age_pre_1970_penalty', 0.20); // +20% por defecto
-  } else if (propertyAge === '1970_2000') {
-    ageMultiplier = 1.0 + getGlobalSetting('age_1970_2000_penalty', 0.08); // +8% por defecto
+  if (tipo !== 'obra_nueva') {
+    if (propertyAge === 'pre_1970') {
+      ageMultiplier = 1.0 + getGlobalSetting('age_pre_1970_penalty', 0.20);
+    } else if (propertyAge === '1970_2000') {
+      ageMultiplier = 1.0 + getGlobalSetting('age_1970_2000_penalty', 0.08);
+    }
   }
-  
-  // Decidir método de cálculo base: Fijo vs Proporcional a m2
+
+  // Coeficiente técnico de merma/desperdicio de materiales (5% estándar, 8% en gran formato/rectificados)
+  const wastePercent = calidad === 'alta' || calidad === 'premium' ? 8 : 5;
+  const wasteMultiplier = 1 + wastePercent / 100;
+
   let baseTotal = 0;
   if (projectType?.base_price_type === 'fixed') {
-     baseTotal = baseReferencePrice * qSetting.multiplier * hSetting.multiplier * ageMultiplier;
+    baseTotal = baseReferencePrice * Number(qSetting.multiplier) * Number(hSetting.multiplier) * ageMultiplier;
   } else {
-     baseTotal = scaledPricePerM2 * safeM2 * qSetting.multiplier * hSetting.multiplier * ageMultiplier;
+    baseTotal = scaledPricePerM2 * safeM2 * Number(qSetting.multiplier) * Number(hSetting.multiplier) * ageMultiplier;
   }
-  
-  // 4. Aplicar Extras Dinámicos 
+
+  // 3. Aplicar Extras Dinámicos con la función unificada (incluye soporte para Calidad Premium)
   const extrasTotal = selectedExtras.reduce((acc, extraId) => {
     const extra = extras.find(e => e.id === extraId);
     if (!extra) return acc;
-    
-    let extraPrice = Number(extra.price || 0);
-    
-    // Si depende de la calidad, aplicamos la escala o el precio específico
-    // Por retrocompatibilidad asumimos TRUE si es undefined (hasta que actualices Supabase)
-    if (extra.is_quality_dependent !== false) {
-       if (calidad === 'basica') extraPrice = Number(extra.price_basic || extraPrice);
-       else if (calidad === 'alta') extraPrice = Number(extra.price_high || extraPrice * 2);
-       else extraPrice = Number(extra.price_medium || extraPrice * 1.5);
-    }
-    
-    // Si el precio es por m2, se multiplica por la superficie solo si es un precio unitario real (< 150)
-    // Si ya es un valor alto (>= 150), asumimos que es el precio global estimado para el proyecto
-    if (extra.price_type === 'm2' && extraPrice < 150) {
-       extraPrice *= safeM2;
-    }
-    
-    return acc + extraPrice;
+    return acc + calculateExtraPrice(extra, data);
   }, 0);
-  
-  // 5. Costes de Mano de Obra y Sobreesfuerzo Logístico
-  // El baseTotal representa el coste total estimado de ejecución (materiales + mano de obra).
-  // Para evitar duplicar costes, desglosamos baseTotal de la siguiente manera:
-  // - 60% se asigna a materiales y ejecución base.
-  // - 40% se asigna a mano de obra base.
-  // Si no hay ascensor, aplicamos una penalización de logística sobre el coste de mano de obra.
+
+  // 4. Desglose Técnico de Materiales (38% + merma, cumpliendo Art. 91 LIVA <40%) y Mano de Obra / Dirección Técnica (62%)
   let laborLogisticMultiplier = 1.0;
-  if (vivienda === 'piso' && hasElevator === false) {
-    laborLogisticMultiplier = 1.0 + getGlobalSetting('elevator_penalty', 0.15); // +15% por defecto
+  if (tipo !== 'obra_nueva' && vivienda === 'piso' && hasElevator === false) {
+    laborLogisticMultiplier = 1.0 + getGlobalSetting('elevator_penalty', 0.15);
   }
 
-  const laborTotal = baseTotal * 0.40 * laborLogisticMultiplier;
-  const baseMaterialTotal = baseTotal * 0.60;
-  
-  // 6. SUMA PEM (Presupuesto de Ejecución Material)
-  const subtotalPEM = Math.round(baseMaterialTotal + extrasTotal + laborTotal);
-  
-  // 7. Impuestos Técnicos y Gestiones (ICIO, Tasas, Colegio) -> ~4% del PEM
-  const icioTax = Math.round(subtotalPEM * 0.04);
-  
-  // 8. Fondo de Imprevistos (Contingencia Técnica) -> ~5%
+  const baseMaterialTotal = Math.round(baseTotal * 0.38 * wasteMultiplier);
+  const laborTotal = Math.round(baseTotal * 0.62 * laborLogisticMultiplier);
+
+  // 5. SUBTOTAL PEM (Presupuesto de Ejecución Material)
+  const subtotalPEM = baseMaterialTotal + extrasTotal + laborTotal;
+
+  // 6. Fondo de Imprevistos / Contingencia Técnica (~5% del PEM)
   const contingencyMargin = Math.round(subtotalPEM * 0.05);
 
-  const totalGross = subtotalPEM + icioTax + contingencyMargin;
-  
-  // 9. Aplicar IVA Final desde la base de datos (global_settings -> iva_rate)
-  const ivaSetting = globalSettings.find(s => s.key === 'iva_rate');
-  const ivaRate = ivaSetting ? Number(ivaSetting.value) : 0.21;
-  
-  const iva = Math.round(totalGross * ivaRate);
-  const totalWithIVA = totalGross + iva;
-  
-  // Margen publicitario para Mostrar (Ej: ±15% de desviación teórica si se quiere mostrar en web)
-  const marginSetting = globalSettings.find(s => s.key === 'price_margin');
-  const margin = marginSetting ? Number(marginSetting.value) : 0.15; 
-  
+  // 7. Base Imponible sujeta a IVA (PEM + Contingencia; el ICIO municipal NO lleva IVA)
+  const baseImponible = subtotalPEM + contingencyMargin;
+
+  // 8. Tipo de IVA general (21%) aplicable a particulares y locales:
+  const ivaRate = 0.21;
+  const iva = Math.round(baseImponible * ivaRate);
+
+  // 9. Tasas Urbanísticas e ICIO Municipal (~4% del PEM, exento de IVA)
+  const icioTax = Math.round(subtotalPEM * 0.04);
+
+  // 10. Total Final (Base Imponible + IVA + Tasas/ICIO)
+  const totalWithIVA = baseImponible + iva + icioTax;
+
+  // Horquilla orientativa (±15% o según configuración)
+  const margin = getGlobalSetting('price_margin', 0.15);
+
   return {
     min: Math.round(totalWithIVA * (1 - margin)),
     max: Math.round(totalWithIVA * (1 + margin)),
     total: totalWithIVA,
     breakdown: {
       pem: subtotalPEM,
-      baseMaterial: Math.round(baseMaterialTotal),
+      baseImponible,
+      baseMaterial: baseMaterialTotal,
       extras: extrasTotal,
-      labor: Math.round(laborTotal),
+      labor: laborTotal,
       icio: icioTax,
       contingency: contingencyMargin,
-      iva: iva,
-      ivaRate: ivaRate,
+      iva,
+      ivaRate,
       ivaPercent: Math.round(ivaRate * 100),
+      wastePercent,
       pricePerM2: Math.round(scaledPricePerM2)
     }
   };
