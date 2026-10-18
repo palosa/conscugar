@@ -15,13 +15,18 @@ function ScrollAndMetaManager() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    // Actualizar canonical y robots dinámicamente según la ruta activa
+    // Actualizar canonical, og:url y robots dinámicamente según la ruta activa
     const canonicalEl = document.querySelector('link[rel="canonical"]');
+    const ogUrlEl = document.querySelector('meta[property="og:url"]');
     const robotsEl = document.querySelector('meta[name="robots"]');
     const baseUrl = 'https://www.conscugar.es';
+    const currentUrl = pathname === '/' ? `${baseUrl}/` : `${baseUrl}${pathname}`;
 
     if (canonicalEl) {
-      canonicalEl.setAttribute('href', pathname === '/' ? `${baseUrl}/` : `${baseUrl}${pathname}`);
+      canonicalEl.setAttribute('href', currentUrl);
+    }
+    if (ogUrlEl) {
+      ogUrlEl.setAttribute('content', currentUrl);
     }
 
     if (robotsEl) {
