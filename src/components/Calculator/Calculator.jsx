@@ -30,8 +30,6 @@ const FALLBACK_CONFIG = {
     { id: 'bano', name: 'Reforma de Baño', description: 'Diseño y funcionalidad para tu aseo', icon: 'ShowerHead', base_price_fallback: 700, display_order: 2 },
     { id: 'cocina', name: 'Reforma de Cocina', description: 'La cocina de tus sueños a medida', icon: 'CookingPot', base_price_fallback: 600, display_order: 3 },
     { id: 'obra_nueva', name: 'Obra Nueva', description: 'Construimos tu hogar desde cero', icon: 'Construction', base_price_fallback: 900, display_order: 4 },
-    { id: 'rehabilitacion', name: 'Rehabilitación', description: 'Recuperación de fachadas y estructuras', icon: 'Building2', base_price_fallback: 300, display_order: 5 },
-    { id: 'reforma_parcial', name: 'Reforma Parcial', description: 'Pequeños cambios, grandes mejoras', icon: 'Wrench', base_price_fallback: 280, display_order: 6 },
   ],
   pricingRanges: [
     { project_type: 'reforma_integral', range_min: 0, range_max: 50, price_per_m2: 480 },
@@ -623,7 +621,16 @@ const Calculator = () => {
             >
               {/* PASO 1: TIPO DE OBRA */}
               {step === 1 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3" role="group" aria-label="Selecciona el tipo de obra">
+                <div
+                  className={cn(
+                    "grid gap-3.5",
+                    config.projectTypes.length <= 4
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : "grid-cols-2 sm:grid-cols-3"
+                  )}
+                  role="group"
+                  aria-label="Selecciona el tipo de obra"
+                >
                   {config.projectTypes.map(type => {
                     const Icon = ICON_MAP[type.icon] || HomeIcon;
                     const isActive = data.tipo === type.id;
@@ -634,27 +641,32 @@ const Calculator = () => {
                         aria-pressed={isActive}
                         onClick={() => updateData('tipo', type.id)}
                         className={cn(
-                          "relative p-4 sm:p-5 rounded-xl border cursor-pointer transition-all flex flex-col gap-3 group min-h-[126px] justify-center items-center text-center",
+                          "relative p-5 rounded-2xl border cursor-pointer transition-all flex items-center sm:flex-col gap-4 sm:gap-3 group min-h-[92px] sm:min-h-[144px] sm:justify-center sm:items-center text-left sm:text-center",
                           isActive
                             ? "border-primary bg-orange-50/70 shadow-sm ring-1 ring-primary"
                             : "border-stone-200 bg-[#F7F5F0]/50 hover:bg-white hover:border-primary/40"
                         )}
                       >
                         <div className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                          "w-11 h-11 rounded-xl flex items-center justify-center transition-colors shrink-0",
                           isActive ? "bg-primary text-white" : "bg-white border border-stone-200 text-stone-700 group-hover:text-primary"
                         )}>
                           <Icon aria-hidden="true" className="w-5 h-5" />
                         </div>
-                        <div className="space-y-0.5">
-                          <span className="text-xs sm:text-sm font-bold text-stone-900 block leading-snug">
+                        <div className="space-y-1 min-w-0">
+                          <span className="text-sm sm:text-base font-bold text-stone-900 block leading-snug">
                             {type.name}
                           </span>
+                          {type.description && (
+                            <span className="text-xs text-stone-500 block line-clamp-1">
+                              {type.description}
+                            </span>
+                          )}
                           <span className={cn(
-                            "text-[11px] font-semibold block",
-                            isActive ? "text-primary" : "text-stone-500"
+                            "text-[11px] font-semibold block pt-0.5",
+                            isActive ? "text-primary" : "text-stone-400 group-hover:text-primary"
                           )}>
-                            {isActive ? 'Seleccionado' : 'Seleccionar'}
+                            {isActive ? '✓ Seleccionado' : 'Seleccionar →'}
                           </span>
                         </div>
                       </button>
