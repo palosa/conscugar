@@ -166,7 +166,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="space-y-5">
             <span className="text-2xl font-outfit font-extrabold tracking-tight">
-              CONS<span className="text-orange-500">CUGAR</span>
+              CONSCUGAR
             </span>
             <p className="text-stone-400 text-sm leading-relaxed max-w-xs">
               Estudio técnico de arquitectura, reformas integrales y construcción en Sagunto, Puerto de Sagunto, Camp de Morvedre y Valencia.
