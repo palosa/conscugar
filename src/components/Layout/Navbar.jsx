@@ -178,11 +178,6 @@ const Navbar = ({ phone = '34600000000' }) => {
               className="flex items-center gap-2.5 group shrink-0"
               aria-label="Conscugar — Volver al inicio"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-stone-900 group-hover:bg-primary transition-colors flex items-center justify-center shadow-sm shrink-0">
-                <span className="font-outfit font-extrabold text-sm sm:text-base text-white tracking-tighter">
-                  C<span className="text-orange-400 group-hover:text-white">.</span>
-                </span>
-              </div>
               <div className="flex flex-col">
                 <span className="text-base sm:text-xl font-outfit font-extrabold tracking-tight text-stone-900 leading-none">
                   CONS<span className="text-primary">CUGAR</span>
